@@ -273,17 +273,23 @@ async def main():
 
 ### 3.4 Langfuse Trace 接入
 
+> ✅ **已落地（v1.0，2026-09-02）**。本节原为「目标设计」草稿，实际落地与草稿有三处关键差异，以 [13-Langfuse接入与面试题](./13-Langfuse接入与面试题.md) 为准：
+> 1. **LLM 层不走 litellm callback**：litellm==1.55.3 的 langfuse 集成只兼容 v2 SDK（`langfuse.model.CreateTrace/CreateGeneration`，v3 已移除）；改为在 [llm.py](../app/clients/llm.py) 收口点用 v3 `@observe` 记 generation，从 litellm 响应取**真实 usage**（替代 estimate_tokens 估算）。
+> 2. **SDK 用 v3**（OTel 内核），可选依赖 `pip install -e ".[langfuse]"`，未装包/未配置时全链路 no-op。
+> 3. **埋点收口三处，业务代码零改动**：API 端点 root trace（`observe_span("api.xxx")`）→ 节点 span（[trace.py](../app/clients/trace.py) 的 `trace_node` 统一注入）→ LLM generation（[llm.py](../app/clients/llm.py)）。纪律与审计一致：旁路异步上报、fail-open、可采样（LANGFUSE_SAMPLE_RATE）、停机 flush。
+
 #### 3.4.1 部署 Langfuse
 
 ```yaml
-# docker-compose.yml 新增
+# docker-compose.yml 新增（v2 单体示例：只要 PostgreSQL，最轻；注意 v2 已停止新功能开发，
+# v3 自部署需要 ClickHouse + MinIO + PostgreSQL 全家桶，小团队建议先用云版验证）
 langfuse:
   image: langfuse/langfuse:2
   ports: ["3000:3000"]
   environment:
     - DATABASE_URL=postgresql://langfuse:langfuse@postgres-langfuse:5432/langfuse
     - NEXTAUTH_SECRET=your-secret
-    - SALT=your-salt
+    - SALT=your-secret
     - NEXTAUTH_URL=http://localhost:3000
   depends_on: [postgres-langfuse]
   restart: unless-stopped
@@ -300,51 +306,25 @@ volumes:
   lf-pg:
 ```
 
-#### 3.4.2 接入 Langfuse
+#### 3.4.2 接入 Langfuse（已落地版）
 
 ```python
-# app/clients/trace.py（新增）
-"""Langfuse Trace 客户端：自动埋点 LangGraph 节点"""
-from functools import wraps
-from langfuse import Langfuse
-from langfuse.openai import openai  # 自动注入
-from app.config import settings
+# app/clients/langfuse_client.py（已落地）——唯一封装点，四层 no-op 降级：
+#   未启用(env) / 未装包 / 未配 key / 运行时异常 → 全部静默降级为纯日志 trace
+init_langfuse()      # lifespan 启动时调用：注入 LANGFUSE_* 环境变量 + 取全局 client
+flush_langfuse()     # lifespan 停机时调用：flush 内存队列防丢 trace 尾巴
 
-_langfuse = Langfuse(
-    host=settings.langfuse_host,
-    public_key=settings.langfuse_public_key,
-    secret_key=settings.langfuse_secret_key,
-)
+observe_span("api.recommend-coach")                    # API 端点：root trace
+observe_span("node.extract_intent")                    # 图节点：span（trace_node 统一注入）
+observe_span("llm.acompletion", as_type="generation")  # LLM 调用：generation
 
-def trace_node(name: str):
-    """节点级 trace 装饰器"""
-    def decorator(fn):
-        @wraps(fn)
-        async def wrapper(state):
-            with _langfuse.start_as_current_span(name=name) as span:
-                span.set_input(state)
-                try:
-                    result = await fn(state)
-                    span.set_output(result)
-                    return result
-                except Exception as exc:
-                    span.record_exception(exc)
-                    raise
-        return wrapper
-    return decorator
-
-
-# 节点改造（仅加装饰器，不改逻辑）
-@trace_node("extract_intent")
-async def extract_intent(state):
-    ...
-
-@trace_node("retrieve_and_rank")
-async def retrieve_and_rank(state):
-    ...
+update_trace_meta(user_id=..., session_id=thread_id, metadata={"request_id": ...})
+update_current_generation(output=..., model=..., usage={"input": p, "output": c, ...})
 ```
 
-#### 3.4.3 Prompt 抽到 Langfuse
+启用：`.env` 里 `LANGFUSE_ENABLED=true` + `LANGFUSE_PUBLIC_KEY/SECRET_KEY/HOST`（见 [.env.example](../.env.example)）。
+
+#### 3.4.3 Prompt 抽到 Langfuse（⏳ 目标设计：当前 prompt 走本地 YAML 版本化，见 §3.5）
 
 ```python
 # 直接在 Langfuse UI 创建 prompt，代码侧 fetch

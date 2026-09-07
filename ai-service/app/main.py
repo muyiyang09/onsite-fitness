@@ -26,7 +26,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.v1 import cert_review, chat, recommend, review_summary, system
-from app.clients import redis_client
+from app.clients import langfuse_client, redis_client
 from app.clients.db import get_engine
 from app.clients.llm import is_mock_mode
 from app.config import settings
@@ -51,6 +51,10 @@ async def lifespan(app: FastAPI):
         settings.service_env, settings.service_port, settings.llm_model, is_mock_mode(),
     )
 
+    # Langfuse 可观测性（#13，可选）：未启用/未装包/初始化失败一律降级为纯日志 trace（fail-open）
+    if langfuse_client.init_langfuse():
+        logger.info("[Langfuse] LLM 语义层 trace 已启用：节点 span + 真实 usage 上报（旁路异步）")
+
     # DB 灾备表建表（幂等，失败不阻断启动——Checkpointer 仍可用，只是 DB 兜底层会降级）
     if settings.checkpointer_backend == "redis" and settings.checkpoint_db_fallback:
         try:
@@ -61,8 +65,10 @@ async def lifespan(app: FastAPI):
             logger.warning("[SessionStore] 建表失败（不影响启动，DB 兜底层降级为不可用）：%s", exc)
 
     yield
-    # 优雅停机：清空连接池（uvicorn --timeout-graceful-shutdown 已处理在飞请求层）
-    logger.info("AI 服务停止：关闭 DB 连接池 + Redis 连接池")
+    # 优雅停机：先 flush Langfuse trace 队列（防丢尾巴），再清空连接池
+    # （uvicorn --timeout-graceful-shutdown 已处理在飞请求层）
+    logger.info("AI 服务停止：flush Langfuse + 关闭 DB/Redis 连接池")
+    langfuse_client.flush_langfuse()
     try:
         get_engine().dispose()
     except Exception as exc:  # noqa: BLE001

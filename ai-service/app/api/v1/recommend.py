@@ -17,6 +17,7 @@ from app.clients.cache import (
     try_acquire_build_lock,
     wait_for_result,
 )
+from app.clients.langfuse_client import observe_span, update_trace_meta
 from app.config import settings
 from app.core import metrics
 from app.core.audit import spawn_audit
@@ -56,6 +57,7 @@ class FeedbackIn(BaseModel):
     summary="教练智能推荐（自然语言 → Top N 教练 + 理由）",
     response_model=RecommendResult,
 )
+@observe_span("api.recommend-coach")
 async def recommend_coach(
     payload: RecommendCoachIn,
     request: Request,
@@ -98,6 +100,13 @@ async def recommend_coach(
 
     # 3. 走 Graph（ainvoke）
     thread_id = f"anon-{uuid4().hex}"  # 单次推荐无 resume，唯一 id 避免跨请求状态累积
+    # Langfuse（#13）：root trace 元数据，request_id 是日志/审计/trace 三方关联键
+    update_trace_meta(
+        user_id=user_id,
+        session_id=thread_id,
+        metadata={"request_id": request_id, "top_n": payload.top_n},
+        tags=["recommend"],
+    )
     state_in: dict[str, object] = {"user_query": query, "top_n": payload.top_n}
     if payload.city_code_override:
         state_in["city_code_override"] = payload.city_code_override

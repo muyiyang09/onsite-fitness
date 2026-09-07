@@ -8,6 +8,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Header, Request
 from pydantic import BaseModel, Field
 
+from app.clients.langfuse_client import observe_span, update_trace_meta
 from app.config import settings
 from app.core.audit import spawn_audit
 from app.core.exceptions import UpstreamError
@@ -29,6 +30,7 @@ class ChatIn(BaseModel):
 
 
 @router.post("/chat", summary="统一 AI 入口（Supervisor 路由）")
+@observe_span("api.chat")
 async def chat(
     payload: ChatIn,
     request: Request,
@@ -37,6 +39,12 @@ async def chat(
     """Supervisor 路由：推荐教练直接派发，评价/证书返回路由提示（走专用端点）。"""
     user_id = x_user_id or "anon"
     request_id = request_id_var.get()
+    update_trace_meta(
+        user_id=user_id,
+        session_id=payload.thread_id,
+        metadata={"request_id": request_id},
+        tags=["supervisor"],
+    )
 
     try:
         agent = await route_query(payload.query)

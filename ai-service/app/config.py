@@ -112,6 +112,20 @@ class Settings(BaseSettings):
     mcp_server_port: int = Field(default=18001, description="MCP Server 端口")
     mcp_server_url: str = Field(default="http://localhost:18001/mcp", description="MCP Server URL")
 
+    # —— Langfuse LLM 可观测性（#13，默认关：LLM 语义层 trace，未装包/未配置时全链路 no-op）——
+    # 设计纪律与审计一致：旁路异步上报、fail-open（Langfuse 不可达只丢 trace 不影响主流程）。
+    # 开启需先装可选依赖：pip install -e ".[langfuse]"
+    langfuse_enabled: bool = Field(default=False, description="是否启用 Langfuse（LLM trace/cost/eval 闭环）")
+    langfuse_public_key: str = Field(default="", description="Langfuse Public Key（项目 Settings → API Keys）")
+    langfuse_secret_key: str = Field(default="", description="Langfuse Secret Key")
+    langfuse_host: str = Field(
+        default="https://cloud.langfuse.com",
+        description="Langfuse 地址：云 https://cloud.langfuse.com / 自部署 http://localhost:3000",
+    )
+    langfuse_sample_rate: float = Field(
+        default=1.0, ge=0.0, le=1.0, description="trace 采样率（0~1）；高峰期可调低，坏 case 按 request_id 强制查"
+    )
+
     # —— 多 Agent（#08）——
     review_summary_enabled: bool = Field(default=True, description="是否启用评价摘要 Agent")
     cert_review_enabled: bool = Field(default=True, description="是否启用证书审核 Agent")

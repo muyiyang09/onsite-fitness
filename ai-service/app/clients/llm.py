@@ -14,12 +14,41 @@ from typing import Any, Optional, Type, TypeVar, cast
 from litellm import acompletion, completion
 from pydantic import BaseModel, ValidationError
 
+from app.clients.langfuse_client import (
+    langfuse_ready,
+    observe_span,
+    update_current_generation,
+)
 from app.config import settings
 from app.core import metrics
+from app.core.logging import request_id_var
 
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T", bound=BaseModel)
+
+
+def _record_generation(resp: Any, output: str) -> None:
+    """把一次 LLM 调用的输出与真实 usage 上报到当前 Langfuse generation（#13）。
+
+    - usage 取 API 返回的 resp.usage（真实账单），替代审计层的 estimate_tokens 估算；
+    - 仅在 Langfuse 启用时生效；任何异常按 fail-open 静默降级（观测不影响业务）。
+    """
+    if not langfuse_ready():
+        return
+    usage_dict: Optional[dict[str, Any]] = None
+    usage = getattr(resp, "usage", None)
+    if usage is not None:
+        p = getattr(usage, "prompt_tokens", 0) or 0
+        c = getattr(usage, "completion_tokens", 0) or 0
+        t = getattr(usage, "total_tokens", 0) or (p + c)
+        usage_dict = {"input": p, "output": c, "total": t, "unit": "TOKENS"}
+    update_current_generation(
+        output=output,
+        model=settings.llm_model,
+        usage=usage_dict,
+        metadata={"request_id": request_id_var.get()},
+    )
 
 # =============================================================================
 # 通用参数：所有 LLM 请求走同一组配置，保证行为一致
@@ -45,6 +74,7 @@ def _strip_text(text: Any) -> str:
 # =============================================================================
 # 1. 普通文本生成
 # =============================================================================
+@observe_span("llm.completion", as_type="generation")
 def chat(messages: Iterable[dict[str, str]]) -> str:
     """同步调用 LLM，返回纯文本回答。"""
     msgs = [
@@ -53,12 +83,15 @@ def chat(messages: Iterable[dict[str, str]]) -> str:
     ]
     resp = completion(messages=msgs, **_common_kwargs())
     try:
-        return _strip_text(resp.choices[0].message.content)
+        text = _strip_text(resp.choices[0].message.content)
     except (AttributeError, IndexError, KeyError) as exc:
         logger.error("LLM 返回结构异常: %s | resp=%s", exc, resp)
         raise RuntimeError(f"LLM 返回结构异常：{exc}") from exc
+    _record_generation(resp, text)
+    return text
 
 
+@observe_span("llm.acompletion", as_type="generation")
 async def achat(messages: Iterable[dict[str, str]]) -> str:
     msgs = [
         {"role": m["role"], "content": _strip_text(m.get("content", ""))}
@@ -71,10 +104,12 @@ async def achat(messages: Iterable[dict[str, str]]) -> str:
     finally:
         metrics.observe("llm_latency_ms", (time.perf_counter() - start) * 1000)
     try:
-        return _strip_text(resp.choices[0].message.content)
+        text = _strip_text(resp.choices[0].message.content)
     except (AttributeError, IndexError, KeyError) as exc:
         logger.error("LLM 返回结构异常: %s | resp=%s", exc, resp)
         raise RuntimeError(f"LLM 返回结构异常：{exc}") from exc
+    _record_generation(resp, text)
+    return text
 
 
 # =============================================================================

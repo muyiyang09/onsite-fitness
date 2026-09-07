@@ -44,6 +44,13 @@ dev = [
 vector-milvus = [
     "pymilvus>=2.4.0",            # Milvus 客户端（MilvusClient + HNSW/COSINE）
 ]
+# LLM 可观测性（#13 Langfuse，LLM 语义层 trace）：
+#   pip install -e ".[langfuse]"
+langfuse = [
+    "langfuse>=3.0,<4",           # v3 基于 OpenTelemetry。注意：litellm==1.55.3 内置 langfuse
+                                  # callback 只兼容 v2 SDK（langfuse.model.CreateTrace 已被 v3 移除），
+                                  # 故本项目不走该 callback，LLM generation 在 llm.py 收口点埋点
+]
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]

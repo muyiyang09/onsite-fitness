@@ -9,6 +9,7 @@ from fastapi import APIRouter, Header, Request
 from langgraph.types import Command
 from pydantic import BaseModel, Field
 
+from app.clients.langfuse_client import observe_span, update_trace_meta
 from app.config import settings
 from app.core import hitl_state
 from app.core.audit import spawn_audit
@@ -29,6 +30,7 @@ class ResumeIn(BaseModel):
 
 
 @router.post("/cert-review", summary="证书审核（OCR → 核验 → 风险评估；HITL 开启时返回 pending）")
+@observe_span("api.cert-review")
 async def cert_review(
     payload: CertReviewIn,
     request: Request,
@@ -40,6 +42,12 @@ async def cert_review(
     request_id = request_id_var.get()
     prompt = f"coach_id={payload.coach_id},cert_type={payload.cert_type},cert_number={payload.cert_number}"
     thread_id = f"cert-{payload.coach_id}-{uuid4().hex}"
+    update_trace_meta(
+        user_id=user_id,
+        session_id=thread_id,
+        metadata={"request_id": request_id, "coach_id": payload.coach_id, "cert_type": payload.cert_type},
+        tags=["cert-review"],
+    )
     try:
         state_out = await CERT_REVIEW_GRAPH.ainvoke(
             {
@@ -97,6 +105,7 @@ async def cert_review(
 
 
 @router.post("/cert-review/{thread_id}/resume", summary="HITL 人工确认（approve / reject）")
+@observe_span("api.cert-review-resume")
 async def resume_cert_review(
     thread_id: str,
     payload: ResumeIn,
@@ -107,6 +116,13 @@ async def resume_cert_review(
         raise ValidationFailedError("HITL 未启用")
     user_id = x_user_id or "anon"
     request_id = request_id_var.get()
+    # resume 与首次审核共用 session_id=thread_id，trace 树上能看到 interrupt 前后全链路
+    update_trace_meta(
+        user_id=user_id,
+        session_id=thread_id,
+        metadata={"request_id": request_id, "action": payload.action},
+        tags=["cert-review", "hitl"],
+    )
 
     # 冲突检测：已处理过 / 已取消 → 拒绝重复 resume
     status = await hitl_state.get_status(thread_id)

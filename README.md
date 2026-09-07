@@ -40,6 +40,7 @@
 | 缓存三防 / 分布式锁防死锁 / 熔断限流 | [05-商业化加固](ai-service/docs/05-商业化加固.md) |
 | MCP 跨语言工具层 | [07-MCP工具层](ai-service/docs/07-MCP工具层.md) |
 | ⭐ **Agent 高频面试题（40+ 题 + 场景面经 + 速记话术）** | [09-Agent面试题集](ai-service/docs/09-Agent面试题集.md) · [11-Agent场景面经](ai-service/docs/11-Agent场景面经.md) · [12-面试速记话术](ai-service/docs/12-面试速记话术.md) |
+| LLM 可观测性（痛点分析 + 9 道面试问答） | [13-Langfuse接入与面试题](ai-service/docs/13-Langfuse接入与面试题.md) |
 
 ![用户端首页](docs/screenshots/user-home.png)
 
@@ -48,12 +49,12 @@
 ## 核心亮点
 
 - **🤖 多 Agent 架构**：教练推荐 Agent + 评价摘要 Agent + 证书审核 Agent + Supervisor 调度
-- **🔍 混合检索 RAG**：BM25 稀疏检索 + 向量召回（Milvus/Chroma/pgvector）+ RRF 融合
+- **🔍 混合检索 RAG**：BM25 稀疏检索 + Milvus 向量召回 + RRF 融合（Milvus 不可用时降级 BM25 单路）
 - **🔄 Loop 工程**：条件分支路由、失败重试循环、HITL 人工介入、自我反思
 - **🛡️ 工程化加固**：分布式锁防死锁、Checkpointer 状态持久化、限流熔断、Token 预算管控
 - **🔐 安全加固**：三端 JWT 隔离 + 服务间共享密钥鉴权、越权校验全覆盖、支付幂等、AES-GCM 敏感数据加密、缓存穿透/击穿/雪崩三防、RBAC 角色切面、操作审计表
 - **🔌 MCP 工具层**：跨语言工具复用，Spring Boot 业务接口暴露为 MCP Tool 供 AI 调用
-- **📊 可观测性**：审计日志、Prometheus/Grafana/Alertmanager 全套指标告警、Trace 链路追踪
+- **📊 可观测性**：审计日志、Prometheus/Grafana/Alertmanager 全套指标告警、Trace 链路追踪、**Langfuse LLM 语义层**（trace/span/generation + 真实 token 成本，默认关闭、fail-open）
 - **🏗️ 双派单模型**：指定教练 + 抢单池两种派单模式，完整状态机覆盖全流程
 
 ## 系统架构
@@ -75,7 +76,7 @@ flowchart TB
     subgraph 存储
         MySQL[(MySQL 8.0)]
         Redis[(Redis 7)]
-        Vec[(Milvus / Chroma / pgvector)]
+        Vec[(Milvus)]
     end
 
     subgraph AI Agents
@@ -266,7 +267,7 @@ sports-takeout/
 │   │   ├── tools/                 # 工具注册（CoachTools/ReviewTools）
 │   │   ├── config.py              # 强类型配置中心
 │   │   └── main.py                # FastAPI 入口
-│   ├── docs/                      # AI 工程文档（12 份）
+│   ├── docs/                      # AI 工程文档（13 份）
 │   ├── tests/                     # 单元测试
 │   └── pyproject.toml             # Python 项目配置
 │
@@ -308,7 +309,7 @@ sports-takeout/
 | Redis (python) | 7.4.1 | 缓存/Checkpointer |
 | langgraph-checkpoint-redis | 0.5.2 | 生产级状态持久化 |
 | rank-bm25 | 0.2.2 | 稀疏检索 |
-| Milvus 2.4 / Chroma / pgvector | - | 向量存储（环境变量切换后端） |
+| Milvus | - | 向量存储（生产唯一，缺失时降级 BM25 单路） |
 
 ### 前端
 
@@ -352,7 +353,7 @@ MYSQL_USER=sports_app         # 生产禁用 root，走最小权限应用账号
 REDIS_PASSWORD=                # 与根目录 REDIS_PASSWORD 一致
 
 # ===== 向量库后端选择 =====
-# milvus（容器部署默认）/ chroma（开发）/ pgvector（生产可选）
+# milvus 生产唯一；pymilvus 未安装或 Milvus 不可达时向量召回降级为空，主链路退回 BM25 单路
 MILVUS_URI=http://milvus:19530
 
 # ===== 功能开关 =====
@@ -485,6 +486,9 @@ stateDiagram-v2
 | [ai-service/docs/08-多Agent实现.md](ai-service/docs/08-多Agent实现.md) | 多 Agent 协同、Supervisor 调度 |
 | [ai-service/docs/09-Agent面试题集.md](ai-service/docs/09-Agent面试题集.md) | Agent 技术面试深度题集 |
 | [ai-service/docs/10-上线检查清单.md](ai-service/docs/10-上线检查清单.md) | 7 阶段上线检查清单 |
+| [ai-service/docs/11-Agent场景面经.md](ai-service/docs/11-Agent场景面经.md) | Agent 场景面经（行为面试 + 系统设计） |
+| [ai-service/docs/12-面试速记话术.md](ai-service/docs/12-面试速记话术.md) | 面试速记话术（60-90 秒口述版） |
+| [ai-service/docs/13-Langfuse接入与面试题.md](ai-service/docs/13-Langfuse接入与面试题.md) | LLM 可观测性：痛点分析 + Langfuse 接入 + 9 道面试问答 |
 
 ## 许可证 (License)
 
@@ -533,6 +537,7 @@ Preparing for AI engineering interviews or doing tech selection? Go straight to 
 | Cache protection / distributed locks / circuit breaking | [Production Hardening](ai-service/docs/05-商业化加固.md) |
 | MCP cross-language tool layer | [MCP Tool Layer](ai-service/docs/07-MCP工具层.md) |
 | **40+ AI Agent interview questions with answers** | [Interview Q&A](ai-service/docs/09-Agent面试题集.md) · [Scenario Questions](ai-service/docs/11-Agent场景面经.md) |
+| LLM observability (pain points + 9 interview Q&As) | [Langfuse Integration & Interview Q&A](ai-service/docs/13-Langfuse接入与面试题.md) |
 
 If this repo helps you, please give it a **⭐ Star** — it keeps the project alive.
 
@@ -549,11 +554,11 @@ This project extends a traditional O2O business system with an independent **AI 
 ## Key Features
 
 - **🤖 Multi-Agent Architecture**: Coach Recommendation Agent + Review Summary Agent + Certificate Verification Agent + Supervisor Router
-- **🔍 Hybrid RAG**: BM25 sparse retrieval + vector recall + RRF fusion, with Chroma/pgvector backend switching
+- **🔍 Hybrid RAG**: BM25 sparse retrieval + Milvus vector recall + RRF fusion (falls back to BM25-only when Milvus unavailable)
 - **🔄 Loop Engineering**: Conditional routing, retry loops, HITL (Human-in-the-Loop), self-reflection
 - **🛡️ Production Hardening**: Deadlock-free distributed locks, Checkpointer state persistence, rate limiting & circuit breaking, token budget controls
 - **🔌 MCP Tool Layer**: Cross-language tool reuse — Spring Boot business interfaces exposed as MCP Tools for AI agents
-- **📊 Observability**: Audit logging, metrics, trace tracking, prompt versioning
+- **📊 Observability**: Audit logging, metrics, trace tracking, prompt versioning, **Langfuse LLM semantic layer** (trace/span/generation + real token cost, off by default, fail-open)
 
 ## Architecture
 
@@ -574,7 +579,7 @@ flowchart TB
     subgraph Storage
         MySQL[(MySQL 8.0)]
         Redis[(Redis 7)]
-        Vec[(Milvus / Chroma / pgvector)]
+        Vec[(Milvus)]
     end
 
     subgraph AI Agents
@@ -758,7 +763,7 @@ sports-takeout/
 │   │   ├── tools/                 # Tool registry (CoachTools/ReviewTools)
 │   │   ├── config.py              # Strong-type configuration center
 │   │   └── main.py                # FastAPI entrypoint
-│   ├── docs/                      # AI engineering documentation (12 docs)
+│   ├── docs/                      # AI engineering documentation (13 docs)
 │   ├── tests/                     # Unit tests
 │   └── pyproject.toml             # Python project configuration
 │
@@ -800,7 +805,7 @@ sports-takeout/
 | Redis (python) | 7.4.1 | Cache / Checkpointer |
 | langgraph-checkpoint-redis | 0.5.2 | Production state persistence |
 | rank-bm25 | 0.2.2 | Sparse retrieval |
-| Milvus 2.4 / Chroma / pgvector | - | Vector storage (switchable backend) |
+| Milvus | - | Vector storage (production-unique; falls back to BM25 when unavailable) |
 
 ### Frontend
 
@@ -840,7 +845,7 @@ MYSQL_HOST=mysql
 MYSQL_USER=sports_app         # production forbids root; least-privilege app account
 REDIS_PASSWORD=
 
-# Vector backend: milvus (container default) / chroma (dev) / pgvector
+# Vector backend: milvus only (production); falls back to BM25 when pymilvus missing or Milvus unreachable
 MILVUS_URI=http://milvus:19530
 
 CHECKPOINTER_BACKEND=redis    # defaults to redis when SERVICE_ENV=prod; memory is dev-only
@@ -887,7 +892,7 @@ stateDiagram-v2
     Completed --> Reviewed: User reviewed (coach + course)
 ```
 
-> Status codes: `1` Unpaid / `2` Pending / `3` Scheduled / `4` In Service / `5` Completed / `6` Cancelled / `7` Rejected
+> Status codes: `1` Unpaid / `2` Pending / `3` Scheduled / `4` In Service / `5` Completed / `6` Cancelled / `7` Rejected / `8` Refunding / `9` Refunded / `10` Reviewed
 
 ## Database Design (14 Tables)
 
@@ -972,6 +977,7 @@ The following 10 API endpoints have been fully verified (2026-08-24):
 | [ai-service/docs/08-多Agent实现.md](ai-service/docs/08-多Agent实现.md) | Multi-Agent implementation |
 | [ai-service/docs/09-Agent面试题集.md](ai-service/docs/09-Agent面试题集.md) | Agent interview Q&A collection |
 | [ai-service/docs/10-上线检查清单.md](ai-service/docs/10-上线检查清单.md) | Production launch checklist |
+| [ai-service/docs/13-Langfuse接入与面试题.md](ai-service/docs/13-Langfuse接入与面试题.md) | LLM observability: pain points + Langfuse integration + 9 interview Q&As |
 
 ## License
 

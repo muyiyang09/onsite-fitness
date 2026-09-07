@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Header, Request
 
+from app.clients.langfuse_client import observe_span, update_trace_meta
 from app.config import settings
 from app.core.audit import spawn_audit
 from app.core.exceptions import UpstreamError, ValidationFailedError
@@ -21,6 +22,7 @@ router = APIRouter(prefix="/v1/ai", tags=["AI"])
 
 @router.post("/review-summary", response_model=ReviewSummaryResult,
              summary="评价摘要（教练优缺点 + 标签）")
+@observe_span("api.review-summary")
 async def review_summary(
     payload: ReviewSummaryIn,
     request: Request,
@@ -31,6 +33,12 @@ async def review_summary(
     user_id = x_user_id or "anon"
     request_id = request_id_var.get()
     thread_id = f"review-{payload.coach_id}-{uuid4().hex}"
+    update_trace_meta(
+        user_id=user_id,
+        session_id=thread_id,
+        metadata={"request_id": request_id, "coach_id": payload.coach_id, "limit": payload.limit},
+        tags=["review-summary"],
+    )
     try:
         state_out = await REVIEW_SUMMARY_GRAPH.ainvoke(
             {"coach_id": payload.coach_id, "limit": payload.limit},
