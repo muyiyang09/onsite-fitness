@@ -28,6 +28,7 @@
   - 重排（bge-reranker）：默认关 + 依赖缺失降级 no-op。
   三者缺谁都能跑，只是召回路数从 3 → 2 → 1 逐级退化，永不抛异常打断推荐主链路。
 """
+
 from __future__ import annotations
 
 import logging
@@ -100,7 +101,9 @@ def hybrid_match_scores(query: str, coaches: list[dict[str, Any]]) -> dict[int, 
 
     # —— 三路召回（当前向量路自动退化，只走 BM25）——
     bm25_hits = [(cid, s) for cid, s in bm25.search(query, settings.bm25_top_k) if cid in idset]
-    vec_hits = [(cid, s) for cid, s in vectorstore.search(query, settings.bm25_top_k) if cid in idset]
+    vec_hits = [
+        (cid, s) for cid, s in vectorstore.search(query, settings.bm25_top_k) if cid in idset
+    ]
 
     if not bm25_hits and not vec_hits:
         return {}

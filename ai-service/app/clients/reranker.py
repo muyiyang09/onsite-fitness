@@ -7,6 +7,7 @@ Cross-Encoder（bge-reranker-v2-m3）把 (query, doc) 拼一起过模型，精�
   - 惰性加载 + 失败降级：依赖缺失 / 模型加载失败时 `rerank()` 原样返回输入（no-op），
     由上层 hybrid.py 直接沿用 RRF 顺序，不抛异常。
 """
+
 from __future__ import annotations
 
 import logging
@@ -51,7 +52,7 @@ def rerank(query: str, docs: list[dict[str, Any]], top_n: int = 3) -> list[dict[
         scores = model.compute_score(pairs, normalize=True)
         if not isinstance(scores, (list, tuple)):
             scores = [scores]  # 单条输入返回标量
-        ranked = sorted(zip(docs, scores), key=lambda x: x[1], reverse=True)
+        ranked = sorted(zip(docs, scores, strict=True), key=lambda x: x[1], reverse=True)
         return [d for d, _ in ranked[:top_n]]
     except Exception as exc:  # noqa: BLE001
         logger.warning("[Reranker] 重排失败，跳过（沿用 RRF 顺序）：%s", exc)

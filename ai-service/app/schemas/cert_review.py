@@ -1,7 +1,8 @@
 """证书审核 Agent（#08-B）的 Pydantic 契约。"""
+
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -13,7 +14,7 @@ class CertReviewIn(BaseModel):
     cert_type: str = Field(..., description="证书类型：国职 / 国际认证 / 急救证")
     cert_number: str = Field(..., description="证书编号")
     holder_name: str = Field(..., description="持有人姓名")
-    image_url: Optional[str] = Field(default=None, description="证书图片 URL（OCR 用）")
+    image_url: str | None = Field(default=None, description="证书图片 URL（OCR 用）")
 
 
 class CertificateFields(BaseModel):
@@ -22,7 +23,7 @@ class CertificateFields(BaseModel):
     cert_type: str = Field(description="证书类型")
     cert_number: str = Field(description="证书编号")
     holder_name: str = Field(description="持有人姓名")
-    expiry_date: Optional[str] = Field(default=None, description="有效期，如 2027-06-30")
+    expiry_date: str | None = Field(default=None, description="有效期，如 2027-06-30")
 
 
 class VerificationItem(BaseModel):

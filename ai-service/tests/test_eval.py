@@ -6,6 +6,7 @@
     cd ai-service
     ./.venv/Scripts/python.exe -m pytest tests/test_eval.py -q
 """
+
 from __future__ import annotations
 
 import sys
@@ -33,6 +34,7 @@ def test_load_prompt_returns_template():
 
 def test_load_prompt_missing_raises():
     import pytest
+
     with pytest.raises(FileNotFoundError):
         load_prompt("nonexistent_prompt")
 

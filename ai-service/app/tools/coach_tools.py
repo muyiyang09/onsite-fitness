@@ -3,10 +3,11 @@
 把原来散在 recommend_coach.py 里的数据获取逻辑抽到这里，做成「可复用工具」，
 供推荐 Agent、未来的评价摘要/证书审核 Agent 共享，也供 MCP Server 对外暴露。
 """
+
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from app.clients import bm25, reranker, vectorstore
 from app.clients.db import afetch_all
@@ -19,12 +20,36 @@ logger = logging.getLogger(__name__)
 # 本地假数据（离线兜底，与 SQL 种子保持一致）
 # ---------------------------------------------------------------------------
 _MOCK_COACHES: list[dict[str, Any]] = [
-    {"coach_id": 1, "name": "李教练", "sex": "1", "level": 4, "rating": 4.9,
-     "service_radius_km": 8.0, "city_name": "北京市", "bio": "国职认证，专注减脂塑形 8 年"},
-    {"coach_id": 2, "name": "王教练", "sex": "2", "level": 3, "rating": 4.8,
-     "service_radius_km": 5.0, "city_name": "北京市", "bio": "擅长增肌与体能训练"},
-    {"coach_id": 3, "name": "张教练", "sex": "1", "level": 2, "rating": 4.7,
-     "service_radius_km": 10.0, "city_name": "北京市", "bio": "运动康复方向，产后恢复经验丰富"},
+    {
+        "coach_id": 1,
+        "name": "李教练",
+        "sex": "1",
+        "level": 4,
+        "rating": 4.9,
+        "service_radius_km": 8.0,
+        "city_name": "北京市",
+        "bio": "国职认证，专注减脂塑形 8 年",
+    },
+    {
+        "coach_id": 2,
+        "name": "王教练",
+        "sex": "2",
+        "level": 3,
+        "rating": 4.8,
+        "service_radius_km": 5.0,
+        "city_name": "北京市",
+        "bio": "擅长增肌与体能训练",
+    },
+    {
+        "coach_id": 3,
+        "name": "张教练",
+        "sex": "1",
+        "level": 2,
+        "rating": 4.7,
+        "service_radius_km": 10.0,
+        "city_name": "北京市",
+        "bio": "运动康复方向，产后恢复经验丰富",
+    },
 ]
 
 _MOCK_COURSES: list[dict[str, Any]] = [
@@ -51,7 +76,9 @@ def _normalize_coach(c: dict[str, Any]) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 # 工具实现（异步，统一 kwargs 入参）
 # ---------------------------------------------------------------------------
-async def fetch_coaches(city_name: Optional[str] = None, level_min: Optional[int] = None) -> list[dict[str, Any]]:
+async def fetch_coaches(
+    city_name: str | None = None, level_min: int | None = None
+) -> list[dict[str, Any]]:
     """取「已审核正常(status=1)」教练；AI_MOCK_DB / MySQL 失败回退 mock。"""
     if is_mock_db():
         coaches = [_normalize_coach(c) for c in _MOCK_COACHES]
@@ -96,8 +123,11 @@ async def fetch_courses() -> list[dict[str, Any]]:
         rows = await afetch_all(sql)
         if rows:
             return [
-                {"name": r.get("name"), "price": float(r.get("price") or 0),
-                 "category": r.get("category") or ""}
+                {
+                    "name": r.get("name"),
+                    "price": float(r.get("price") or 0),
+                    "category": r.get("category") or "",
+                }
                 for r in rows
             ]
     except Exception as exc:  # noqa: BLE001
@@ -105,7 +135,7 @@ async def fetch_courses() -> list[dict[str, Any]]:
     return list(_MOCK_COURSES)
 
 
-async def fetch_slots(coach_ids: list[int]) -> Optional[dict[int, list[str]]]:
+async def fetch_slots(coach_ids: list[int]) -> dict[int, list[str]] | None:
     """每个教练「未来可约」时段 {coach_id: [time_slot,...]}；失败返回 None。"""
     if is_mock_db():
         return {int(c["coach_id"]): ["09:00-10:00"] for c in _MOCK_COACHES}
@@ -137,7 +167,9 @@ async def vector_search(query: str, top_k: int = 50) -> list[tuple[int, float]]:
     return vectorstore.search(query, top_k)
 
 
-async def rerank_docs(query: str, docs: list[dict[str, Any]], top_n: int = 3) -> list[dict[str, Any]]:
+async def rerank_docs(
+    query: str, docs: list[dict[str, Any]], top_n: int = 3
+) -> list[dict[str, Any]]:
     """Cross-Encoder 重排。docs: [{"coach_id":.., "text":..}]。轻量模式下原样返回。"""
     return reranker.rerank(query, docs, top_n)
 
@@ -146,69 +178,83 @@ async def rerank_docs(query: str, docs: list[dict[str, Any]], top_n: int = 3) ->
 # 注册工具到全局注册表
 # ---------------------------------------------------------------------------
 def _register() -> None:
-    TOOL_REGISTRY.register(Tool(
-        name="fetch_coaches",
-        description="按城市/最低等级查询已审核教练列表，返回 coach_id/name/level/rating/bio 等",
-        input_schema={
-            "type": "object",
-            "properties": {
-                "city_name": {"type": "string", "description": "城市名，如 '北京市'"},
-                "level_min": {"type": "integer", "description": "最低等级 1-4"},
+    TOOL_REGISTRY.register(
+        Tool(
+            name="fetch_coaches",
+            description="按城市/最低等级查询已审核教练列表，返回 coach_id/name/level/rating/bio 等",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "city_name": {"type": "string", "description": "城市名，如 '北京市'"},
+                    "level_min": {"type": "integer", "description": "最低等级 1-4"},
+                },
             },
-        },
-        handler=fetch_coaches,
-    ))
-    TOOL_REGISTRY.register(Tool(
-        name="fetch_courses",
-        description="查询课程目录（课程名/价格/分类）",
-        input_schema={"type": "object", "properties": {}},
-        handler=fetch_courses,
-    ))
-    TOOL_REGISTRY.register(Tool(
-        name="bm25_search",
-        description="BM25 关键词召回教练，返回 [(coach_id, score)]",
-        input_schema={
-            "type": "object",
-            "properties": {
-                "query": {"type": "string"},
-                "top_k": {"type": "integer", "default": 50},
+            handler=fetch_coaches,
+        )
+    )
+    TOOL_REGISTRY.register(
+        Tool(
+            name="fetch_courses",
+            description="查询课程目录（课程名/价格/分类）",
+            input_schema={"type": "object", "properties": {}},
+            handler=fetch_courses,
+        )
+    )
+    TOOL_REGISTRY.register(
+        Tool(
+            name="bm25_search",
+            description="BM25 关键词召回教练，返回 [(coach_id, score)]",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string"},
+                    "top_k": {"type": "integer", "default": 50},
+                },
+                "required": ["query"],
             },
-            "required": ["query"],
-        },
-        handler=bm25_search,
-    ))
-    TOOL_REGISTRY.register(Tool(
-        name="vector_search",
-        description="向量语义召回教练，返回 [(coach_id, similarity)]",
-        input_schema={
-            "type": "object",
-            "properties": {
-                "query": {"type": "string"},
-                "top_k": {"type": "integer", "default": 50},
+            handler=bm25_search,
+        )
+    )
+    TOOL_REGISTRY.register(
+        Tool(
+            name="vector_search",
+            description="向量语义召回教练，返回 [(coach_id, similarity)]",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string"},
+                    "top_k": {"type": "integer", "default": 50},
+                },
+                "required": ["query"],
             },
-            "required": ["query"],
-        },
-        handler=vector_search,
-    ))
-    TOOL_REGISTRY.register(Tool(
-        name="rerank_docs",
-        description="Cross-Encoder 重排候选文档，返回精排后的 top N",
-        input_schema={
-            "type": "object",
-            "properties": {
-                "query": {"type": "string"},
-                "docs": {"type": "array", "items": {"type": "object"}},
-                "top_n": {"type": "integer", "default": 3},
+            handler=vector_search,
+        )
+    )
+    TOOL_REGISTRY.register(
+        Tool(
+            name="rerank_docs",
+            description="Cross-Encoder 重排候选文档，返回精排后的 top N",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string"},
+                    "docs": {"type": "array", "items": {"type": "object"}},
+                    "top_n": {"type": "integer", "default": 3},
+                },
+                "required": ["query", "docs"],
             },
-            "required": ["query", "docs"],
-        },
-        handler=rerank_docs,
-    ))
+            handler=rerank_docs,
+        )
+    )
 
 
 _register()
 
 __all__ = [
-    "fetch_coaches", "fetch_courses", "fetch_slots",
-    "bm25_search", "vector_search", "rerank_docs",
+    "fetch_coaches",
+    "fetch_courses",
+    "fetch_slots",
+    "bm25_search",
+    "vector_search",
+    "rerank_docs",
 ]

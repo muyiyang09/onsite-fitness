@@ -3,15 +3,16 @@
 这里故意只引入「langgraph StateGraph + START/END」与消息 reducer，
 不引入任何 LangChain Core 的链式组件，把 LangChain 当零件超市用、只取有用的。
 """
+
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Awaitable, Callable, TypedDict, TypeVar
+from collections.abc import Awaitable, Callable
+from typing import Annotated, Any, TypedDict, TypeVar
 
 from langchain_core.messages import BaseMessage, HumanMessage
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
-from typing_extensions import Annotated
 
 T = TypeVar("T")
 
@@ -21,9 +22,11 @@ T = TypeVar("T")
 # 超时抛 asyncio.TimeoutError，由上层 graph 统一捕获降级；配合各图已有的
 # refine_count / reason_attempts 等循环硬上限，双保险保证图必终止。
 # =============================================================================
-def invoke_node(node: Callable[[dict[str, Any]], Awaitable[Any]],
-                state: dict[str, Any],
-                timeout: float | None = None) -> Awaitable[Any]:
+def invoke_node(
+    node: Callable[[dict[str, Any]], Awaitable[Any]],
+    state: dict[str, Any],
+    timeout: float | None = None,
+) -> Awaitable[Any]:
     from app.config import settings
 
     return asyncio.wait_for(node(state), timeout or settings.graph_node_timeout)

@@ -9,6 +9,7 @@
 局限说明（诚实）：关键词启发式不是银弹，真正强对抗要用 LLM-as-Judge 或内容安全 API。
 这里覆盖 OWASP 常见的直接注入话术，够用但不承诺 100%。
 """
+
 from __future__ import annotations
 
 import logging
@@ -22,9 +23,19 @@ TOOL_LEVEL_DANGEROUS = "DANGEROUS"
 
 # 常见提示词注入特征（#10 §1.5.2 OWASP 常见直接注入话术）
 _INJECTION_PATTERNS = (
-    "忽略之前", "忽略以上", "忽略所有", "ignore previous", "ignore all",
-    "system prompt", "系统提示", "你的指令", "越狱", "扮演",
-    "reveal your instructions", "不要遵守", "你是另一个",
+    "忽略之前",
+    "忽略以上",
+    "忽略所有",
+    "ignore previous",
+    "ignore all",
+    "system prompt",
+    "系统提示",
+    "你的指令",
+    "越狱",
+    "扮演",
+    "reveal your instructions",
+    "不要遵守",
+    "你是另一个",
 )
 
 
@@ -55,6 +66,11 @@ def assert_tool_level(level: str, required: str) -> None:
 
 
 __all__ = [
-    "sanitize_input", "wrap_user_input", "detect_injection", "assert_tool_level",
-    "TOOL_LEVEL_READ", "TOOL_LEVEL_WRITE", "TOOL_LEVEL_DANGEROUS",
+    "sanitize_input",
+    "wrap_user_input",
+    "detect_injection",
+    "assert_tool_level",
+    "TOOL_LEVEL_READ",
+    "TOOL_LEVEL_WRITE",
+    "TOOL_LEVEL_DANGEROUS",
 ]

@@ -1,4 +1,5 @@
 """系统路由：liveness / readiness / metrics。"""
+
 from __future__ import annotations
 
 import asyncio

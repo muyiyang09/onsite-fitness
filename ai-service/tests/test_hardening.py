@@ -6,6 +6,7 @@
     cd ai-service
     ./.venv/Scripts/python.exe -m pytest tests/test_hardening.py -q
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -124,8 +125,8 @@ class _FakeRedis:
     """最小内存 Redis，只实现 cache.py 用到的方法，离线跑三防单测。"""
 
     def __init__(self, *args, **kwargs):
-        self.store: dict[str, str] = {}   # key -> json str
-        self.locks: dict[str, str] = {}   # lock key -> token
+        self.store: dict[str, str] = {}  # key -> json str
+        self.locks: dict[str, str] = {}  # lock key -> token
         self.setex_calls: list[tuple[str, int]] = []
 
     async def get(self, key):

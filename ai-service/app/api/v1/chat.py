@@ -1,8 +1,8 @@
 """统一 AI 入口（Supervisor 路由）。"""
+
 from __future__ import annotations
 
 import logging
-from typing import Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Header, Request
@@ -26,7 +26,7 @@ class ChatIn(BaseModel):
     """统一 AI 入口请求（Supervisor 路由）。"""
 
     query: str = Field(..., min_length=1, max_length=500, description="用户自由文本")
-    thread_id: Optional[str] = Field(default=None, description="会话 ID（可选）")
+    thread_id: str | None = Field(default=None, description="会话 ID（可选）")
 
 
 @router.post("/chat", summary="统一 AI 入口（Supervisor 路由）")
@@ -34,7 +34,7 @@ class ChatIn(BaseModel):
 async def chat(
     payload: ChatIn,
     request: Request,
-    x_user_id: Optional[str] = Header(default=None),
+    x_user_id: str | None = Header(default=None),
 ) -> dict[str, object]:
     """Supervisor 路由：推荐教练直接派发，评价/证书返回路由提示（走专用端点）。"""
     user_id = x_user_id or "anon"

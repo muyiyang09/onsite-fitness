@@ -8,10 +8,10 @@
   - 失败即降级：依赖缺失 / 模型加载失败时，`embed()` 返回空 numpy 数组，
     由上层 `vectorstore.py` / `hybrid.py` 判断为空并退回 BM25 单路，绝不抛异常。
 """
+
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 import numpy as np
 
@@ -19,7 +19,7 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-_model: Optional[object] = None
+_model: object | None = None
 
 
 def _get_model():

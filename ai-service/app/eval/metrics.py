@@ -8,14 +8,21 @@
 原则（#06 §2.3）：能用规则的用规则，规则难定义的才上 LLM-as-Judge。
 这三个指标都是纯规则、0 成本、可离线跑。
 """
+
 from __future__ import annotations
 
 from typing import Any
 
 # 意图抽取关注的字段（expected 里这些字段非 None 才计入）
 _INTENT_FIELDS = [
-    "city_name", "district", "specialization", "level",
-    "min_rating", "max_price", "time_slot", "male_only",
+    "city_name",
+    "district",
+    "specialization",
+    "level",
+    "min_rating",
+    "max_price",
+    "time_slot",
+    "male_only",
 ]
 
 
@@ -68,10 +75,11 @@ def reason_quality_score(reason: str, candidates: list[dict[str, Any]]) -> dict[
     names_in = sum(1 for c in candidates if c.get("name", "") and c.get("name", "") in reason)
     details["coach_names"] = min(40, names_in * 20)
     details["no_empty"] = 20 if not any(w in reason for w in _EMPTY_WORDS) else 0
-    details["data_richness"] = 20 if any(
-        str(c.get("rating")) in reason or str(c.get("price")) in reason
-        for c in candidates
-    ) else 0
+    details["data_richness"] = (
+        20
+        if any(str(c.get("rating")) in reason or str(c.get("price")) in reason for c in candidates)
+        else 0
+    )
     return {"score": sum(details.values()), "details": details}
 
 

@@ -7,11 +7,11 @@ Redis Checkpointer 的 TTL 到期时，会话 state 会丢、会话中断。这�
 设计：只做「thread_id → checkpoint JSON」的简单 KV，不关心 Checkpoint 内部结构，
 序列化用 json.dumps(ensure_ascii=False, default=str)，非 JSON 类型降级为字符串。
 """
+
 from __future__ import annotations
 
 import json
 import logging
-from typing import Optional
 
 from app.clients.db import aexecute, afetch_all
 
@@ -34,7 +34,7 @@ async def ensure_table() -> None:
     """)
 
 
-async def get_state(thread_id: str) -> Optional[dict]:
+async def get_state(thread_id: str) -> dict | None:
     """读会话 state。无记录返回 None，JSON 损坏返回 None（并告警）。"""
     rows = await afetch_all(
         f"SELECT checkpoint_json FROM `{_TABLE}` WHERE thread_id = :t", {"t": thread_id}

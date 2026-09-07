@@ -9,12 +9,13 @@
 
 产出：每次节点执行打一条 `[Trace] node=xxx latency_ms=yyy`（带 request_id）。
 """
+
 from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Awaitable, Callable
 from functools import wraps
-from typing import Awaitable, Callable
 
 from app.clients.langfuse_client import observe_span
 from app.graphs.base import invoke_node

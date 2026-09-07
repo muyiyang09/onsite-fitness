@@ -1,8 +1,8 @@
 """评价摘要路由。"""
+
 from __future__ import annotations
 
 import logging
-from typing import Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Header, Request
@@ -20,13 +20,14 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/v1/ai", tags=["AI"])
 
 
-@router.post("/review-summary", response_model=ReviewSummaryResult,
-             summary="评价摘要（教练优缺点 + 标签）")
+@router.post(
+    "/review-summary", response_model=ReviewSummaryResult, summary="评价摘要（教练优缺点 + 标签）"
+)
 @observe_span("api.review-summary")
 async def review_summary(
     payload: ReviewSummaryIn,
     request: Request,
-    x_user_id: Optional[str] = Header(default=None),
+    x_user_id: str | None = Header(default=None),
 ) -> ReviewSummaryResult:
     if not settings.review_summary_enabled:
         raise ValidationFailedError("评价摘要 Agent 未启用")

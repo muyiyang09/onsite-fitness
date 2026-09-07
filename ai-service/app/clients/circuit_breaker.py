@@ -10,13 +10,15 @@
 
 与限流/降级的区别（见 #05 文档 §2.2）：限流挡入口、熔断快速失败不传染、降级返回兜底。
 """
+
 from __future__ import annotations
 
 import asyncio
 import logging
 import time
-from enum import Enum
-from typing import Any, Awaitable, Callable, TypeVar
+from collections.abc import Awaitable, Callable
+from enum import StrEnum
+from typing import Any, TypeVar
 
 from app.config import settings
 
@@ -25,10 +27,10 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
-class CircuitState(str, Enum):
-    CLOSED = "closed"          # 正常放行
-    OPEN = "open"              # 熔断，快速失败
-    HALF_OPEN = "half_open"    # 半开，放一个试探
+class CircuitState(StrEnum):
+    CLOSED = "closed"  # 正常放行
+    OPEN = "open"  # 熔断，快速失败
+    HALF_OPEN = "half_open"  # 半开，放一个试探
 
 
 class CircuitBreaker:

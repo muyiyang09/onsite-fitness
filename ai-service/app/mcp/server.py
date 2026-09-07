@@ -10,6 +10,7 @@
     pip install mcp
     python -m app.mcp.server
 """
+
 from __future__ import annotations
 
 import logging
@@ -36,6 +37,7 @@ def build_server():
         def make_handler(tool_name: str):
             async def handler(**kwargs):
                 return await TOOL_REGISTRY.call(tool_name, kwargs)
+
             return handler
 
         # FastMCP 用装饰器注册工具：description + schema 直接绑定

@@ -10,6 +10,7 @@
 当前数据：MySQL 尚无 review 表，AI_MOCK_DB / 无数据时用内置 mock 评价兜底；
 真实评价表落地后改 fetch_reviews 即可（#07 工具层预留了 fetch_reviews 工具位）。
 """
+
 from __future__ import annotations
 
 import logging
@@ -26,8 +27,8 @@ from app.tools.review_cert_tools import fetch_reviews
 
 logger = logging.getLogger(__name__)
 
-MAX_REFINE = 2          # 摘要质量不达标的重写次数
-SUMMARY_MAX_LEN = 200   # 摘要长度上限（字）
+MAX_REFINE = 2  # 摘要质量不达标的重写次数
+SUMMARY_MAX_LEN = 200  # 摘要长度上限（字）
 
 _POS_WORDS = ("专业", "好", "到位", "推荐", "耐心", "认真", "满意", "值", "明显")
 _NEG_WORDS = ("迟到", "不", "差", "慢", "麻烦", "敷衍", "改期")
@@ -36,14 +37,14 @@ _NEG_WORDS = ("迟到", "不", "差", "慢", "麻烦", "敷衍", "改期")
 class ReviewSummaryState(TypedDict, total=False):
     coach_id: int
     limit: int
-    reviews: list[dict[str, Any]]      # 原始评价 [{content, rating}]
-    sentiment: dict[str, int]          # {positive/negative/neutral: 条数}
+    reviews: list[dict[str, Any]]  # 原始评价 [{content, rating}]
+    sentiment: dict[str, int]  # {positive/negative/neutral: 条数}
     positive_tags: list[str]
     negative_tags: list[str]
     summary: str
-    result: dict[str, Any]             # ReviewSummaryResult.model_dump()
-    route: str                         # ConditionalRouter 分支 key
-    reason_attempts: int               # 摘要重写次数
+    result: dict[str, Any]  # ReviewSummaryResult.model_dump()
+    route: str  # ConditionalRouter 分支 key
+    reason_attempts: int  # 摘要重写次数
     reason_feedback: str
     used_mock: bool
 
@@ -105,8 +106,11 @@ async def reduce_summary(state: ReviewSummaryState) -> dict[str, Any]:
             user += f"\n\n【重写要求】上次摘要被拒：{reason_feedback}，请重写。"
         try:
             summary = await llm_breaker.call(
-                achat, [{"role": "system", "content": load_prompt("review_reduce_summary")},
-                        {"role": "user", "content": user}]
+                achat,
+                [
+                    {"role": "system", "content": load_prompt("review_reduce_summary")},
+                    {"role": "user", "content": user},
+                ],
             )
         except Exception as exc:  # noqa: BLE001
             logger.warning("摘要 LLM 失败，回退 mock：%s", exc)
@@ -121,8 +125,7 @@ def _mock_summary(sentiment: dict[str, int], pos: list[str], neg: list[str]) -> 
     pos_brief = "、".join([_extract_kw(t) for t in pos[:3]]) or "专业负责"
     neg_brief = "、".join([_extract_kw(t) for t in neg[:2]]) or "无明显负面"
     return (
-        f"评价普遍称赞{pos_brief}（{p} 条正面）。负面集中在{neg_brief}（{n} 条），"
-        f"整体满意度较高。"
+        f"评价普遍称赞{pos_brief}（{p} 条正面）。负面集中在{neg_brief}（{n} 条），整体满意度较高。"
     )
 
 

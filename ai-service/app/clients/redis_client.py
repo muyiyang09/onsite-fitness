@@ -3,10 +3,10 @@
 缓存 / 限流 / Token 预算都要连 Redis，统一走这一个连接池，避免各自建池浪费连接。
 所有上游组件对 Redis 的调用都是「fail-open」：连不上就降级，绝不抛异常阻断业务。
 """
+
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 import redis.asyncio as redis
 
@@ -14,7 +14,7 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-_pool: Optional[redis.ConnectionPool] = None
+_pool: redis.ConnectionPool | None = None
 
 
 def get_pool() -> redis.ConnectionPool:

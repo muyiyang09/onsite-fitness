@@ -1,7 +1,6 @@
 """评价摘要 Agent（#08-A）的 Pydantic 契约。"""
-from __future__ import annotations
 
-from typing import Optional
+from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
@@ -20,5 +19,7 @@ class ReviewSummaryResult(BaseModel):
     summary: str = Field(description="2~3 句优缺点摘要")
     positive_tags: list[str] = Field(default_factory=list, description="高频正向标签")
     negative_tags: list[str] = Field(default_factory=list, description="高频负面标签")
-    sentiment: dict[str, int] = Field(default_factory=dict, description="{positive/negative/neutral: 条数}")
+    sentiment: dict[str, int] = Field(
+        default_factory=dict, description="{positive/negative/neutral: 条数}"
+    )
     used_mock: bool = Field(default=False, description="是否走了 mock（离线/无评价数据）")

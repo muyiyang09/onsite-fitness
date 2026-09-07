@@ -19,6 +19,7 @@
 面试速记：Langfuse = LLM 应用的「行车记录仪」。日志回答「快不快、挂没挂」，
 Langfuse 回答「AI 为什么这么答、花了多少钱」。详见 docs/13-Langfuse接入与面试题.md。
 """
+
 from __future__ import annotations
 
 import logging
@@ -55,7 +56,9 @@ def init_langfuse() -> bool:
     try:
         import langfuse  # 延迟导入：未装包时只影响 Langfuse，不影响服务启动
     except ImportError:
-        logger.warning("[Langfuse] 未安装 langfuse 包，降级关闭（安装：pip install -e '.[langfuse]'）")
+        logger.warning(
+            "[Langfuse] 未安装 langfuse 包，降级关闭（安装：pip install -e '.[langfuse]'）"
+        )
         return False
 
     os.environ.setdefault("LANGFUSE_PUBLIC_KEY", settings.langfuse_public_key)
@@ -68,7 +71,8 @@ def init_langfuse() -> bool:
         _langfuse_client = langfuse.get_client()
         logger.info(
             "[Langfuse] 已启用：host=%s sample_rate=%s（旁路异步上报，fail-open）",
-            settings.langfuse_host, settings.langfuse_sample_rate,
+            settings.langfuse_host,
+            settings.langfuse_sample_rate,
         )
         return True
     except Exception as exc:  # noqa: BLE001
@@ -132,7 +136,10 @@ def update_trace_meta(
         from langfuse import langfuse_context
 
         langfuse_context.update_current_trace(
-            user_id=user_id, session_id=session_id, metadata=metadata, tags=tags,
+            user_id=user_id,
+            session_id=session_id,
+            metadata=metadata,
+            tags=tags,
         )
     except Exception as exc:  # noqa: BLE001
         logger.debug("[Langfuse] update_current_trace 失败（忽略）：%s", exc)

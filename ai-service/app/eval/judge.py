@@ -5,6 +5,7 @@
 
 mock 模式（无 API Key）下返回固定分数，保证离线可跑；真实 LLM 下返回 0~100 多维打分。
 """
+
 from __future__ import annotations
 
 import json
@@ -29,23 +30,29 @@ JUDGE_PROMPT = """你是推荐理由质量评估员。请给以下理由打分�
 """
 
 
-async def judge_reason(
-    user_goal: str, candidates: list[Any], reason: str
-) -> dict[str, Any]:
+async def judge_reason(user_goal: str, candidates: list[Any], reason: str) -> dict[str, Any]:
     """LLM 评判推荐理由质量。mock 模式返回固定分（离线可跑）。"""
     if is_mock_mode():
         return {"score": 80, "details": {}, "feedback": "mock judge（离线）"}
 
-    candidates_brief = "\n".join(
-        f"- {getattr(c, 'name', c) if not isinstance(c, dict) else c.get('name', '')}"
-        for c in candidates
-    ) or "（无）"
+    candidates_brief = (
+        "\n".join(
+            f"- {getattr(c, 'name', c) if not isinstance(c, dict) else c.get('name', '')}"
+            for c in candidates
+        )
+        or "（无）"
+    )
 
-    text = await achat([
-        {"role": "system", "content": JUDGE_PROMPT.format(
-            user_goal=user_goal, candidates=candidates_brief, reason=reason
-        )},
-    ])
+    text = await achat(
+        [
+            {
+                "role": "system",
+                "content": JUDGE_PROMPT.format(
+                    user_goal=user_goal, candidates=candidates_brief, reason=reason
+                ),
+            },
+        ]
+    )
     try:
         return json.loads(text)
     except (json.JSONDecodeError, ValueError) as exc:

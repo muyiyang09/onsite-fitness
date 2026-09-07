@@ -4,6 +4,7 @@
     cd ai-service
     ./.venv/Scripts/python.exe -m pytest tests/test_agents.py -q
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -41,7 +42,12 @@ def test_review_summary_graph_runs():
 def test_cert_review_good_cert_approves():
     state_out = asyncio.run(
         CERT_REVIEW_GRAPH.ainvoke(
-            {"coach_id": 1, "cert_type": "国职", "cert_number": "GZ20240001", "holder_name": "李教练"},
+            {
+                "coach_id": 1,
+                "cert_type": "国职",
+                "cert_number": "GZ20240001",
+                "holder_name": "李教练",
+            },
             config={"configurable": {"thread_id": "cert-good"}},
         )
     )
@@ -53,7 +59,12 @@ def test_cert_review_good_cert_approves():
 def test_cert_review_bad_number_rejects():
     state_out = asyncio.run(
         CERT_REVIEW_GRAPH.ainvoke(
-            {"coach_id": 1, "cert_type": "国职", "cert_number": "bad-number", "holder_name": "李教练"},
+            {
+                "coach_id": 1,
+                "cert_type": "国职",
+                "cert_number": "bad-number",
+                "holder_name": "李教练",
+            },
             config={"configurable": {"thread_id": "cert-bad"}},
         )
     )

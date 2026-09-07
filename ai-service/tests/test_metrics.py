@@ -4,6 +4,7 @@
     cd ai-service
     ./.venv/Scripts/python.exe -m pytest tests/test_metrics.py -q
 """
+
 from __future__ import annotations
 
 import asyncio

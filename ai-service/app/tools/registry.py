@@ -9,11 +9,13 @@
 当前 MCP 默认关闭（单 Agent 单进程直接调用够用，见 #07 §2.2 决策树），
 等 #08 多 Agent 落地 + 需要跨语言时再开。
 """
+
 from __future__ import annotations
 
 import logging
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +42,12 @@ class ToolRegistry:
     def list_tools(self) -> list[dict[str, Any]]:
         """返回工具元数据（供 MCP tools/list 或启动时展示）。"""
         return [
-            {"name": t.name, "description": t.description, "inputSchema": t.input_schema, "level": t.level}
+            {
+                "name": t.name,
+                "description": t.description,
+                "inputSchema": t.input_schema,
+                "level": t.level,
+            }
             for t in self._tools.values()
         ]
 
@@ -66,6 +73,7 @@ async def call_tool(name: str, args: dict[str, Any]) -> Any:
     if settings.mcp_enabled:
         try:
             from app.mcp.client import call_tool as mcp_call
+
             return await mcp_call(name, args)
         except Exception as exc:  # noqa: BLE001
             logger.warning("[tools] MCP 调用 %s 失败，回退直接调用：%s", name, exc)

@@ -12,6 +12,7 @@
   - graph_latency_ms：整图耗时
   - error_total：错误次数
 """
+
 from __future__ import annotations
 
 import threading

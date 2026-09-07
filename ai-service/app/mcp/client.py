@@ -3,6 +3,7 @@
 设计：默认不启用。`call_tool` 会尝试连 MCP Server；失败/未装 SDK 时抛异常，
 由 `app.tools.registry.call_tool` 门面捕获并回退直接调用——协议层挂了不影响业务。
 """
+
 from __future__ import annotations
 
 import logging

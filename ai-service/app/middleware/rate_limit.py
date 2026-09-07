@@ -9,6 +9,7 @@
   - 只对 `/v1/ai/` 业务路径限流，健康检查等系统路径不限；
   - 固定窗口（按分钟取整）实现简单、可读，商业项目入门够用；若要更平滑可换令牌桶。
 """
+
 from __future__ import annotations
 
 import logging

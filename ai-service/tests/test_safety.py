@@ -4,6 +4,7 @@
     cd ai-service
     ./.venv/Scripts/python.exe -m pytest tests/test_safety.py -q
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -62,6 +63,7 @@ def test_assert_tool_level():
 # ---------------------------------------------------------------------------
 def test_cert_review_hitl_interrupt_then_resume(monkeypatch):
     from langgraph.types import Command
+
     from app.graphs.cert_review import CERT_REVIEW_GRAPH
     from app.schemas.cert_review import CertReviewResult
 
@@ -70,7 +72,12 @@ def test_cert_review_hitl_interrupt_then_resume(monkeypatch):
     # 首次 invoke → 暂停（interrupt）
     state_out = asyncio.run(
         CERT_REVIEW_GRAPH.ainvoke(
-            {"coach_id": 1, "cert_type": "国职", "cert_number": "GZ20240001", "holder_name": "李教练"},
+            {
+                "coach_id": 1,
+                "cert_type": "国职",
+                "cert_number": "GZ20240001",
+                "holder_name": "李教练",
+            },
             config={"configurable": {"thread_id": "hitl-test"}},
         )
     )

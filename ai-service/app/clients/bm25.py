@@ -12,12 +12,11 @@
   3. 全量加载内存 —— 教练量级只有几百~几千，rank_bm25 全量内存索引足够，无需 ES。
   4. corpus 拼接 name + bio + city_name —— 让"李教练 减脂 北京"这种多维线索都能命中。
 """
+
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
-
-from app.config import settings
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +25,7 @@ logger = logging.getLogger(__name__)
 try:
     import jieba  # type: ignore
     from rank_bm25 import BM25Okapi  # type: ignore
+
     _DEPS_OK = True
 except ImportError as exc:  # pragma: no cover - 依赖缺失时的兜底
     logger.warning("[BM25] 缺失 jieba/rank_bm25，BM25 召回将降级为不可用：%s", exc)
@@ -49,9 +49,7 @@ class _BM25Index:
         if not tokens:
             return []
         scores = self.bm25.get_scores(tokens)
-        ranked = sorted(
-            zip(self.coach_ids, scores), key=lambda x: x[1], reverse=True
-        )
+        ranked = sorted(zip(self.coach_ids, scores, strict=True), key=lambda x: x[1], reverse=True)
         # 过滤掉 0 分（无任何词命中的教练），避免把大量无关教练塞进候选
         ranked = [(cid, float(s)) for cid, s in ranked if s > 0]
         return ranked[:top_k]
@@ -64,7 +62,7 @@ def _tokenize(text: str) -> list[str]:
     return [t.strip() for t in jieba.cut(text or "") if t.strip()]
 
 
-_index: Optional[_BM25Index] = None
+_index: _BM25Index | None = None
 
 
 def _fetch_all_coaches_for_index() -> list[dict[str, Any]]:
@@ -72,9 +70,7 @@ def _fetch_all_coaches_for_index() -> list[dict[str, Any]]:
     try:
         from app.clients.db import fetch_all
 
-        rows = fetch_all(
-            "SELECT id, name, bio, city_name FROM coach WHERE status = 1"
-        )
+        rows = fetch_all("SELECT id, name, bio, city_name FROM coach WHERE status = 1")
         return [{"coach_id": int(r["id"]), **r} for r in rows]
     except Exception as exc:  # noqa: BLE001
         logger.warning("[BM25] 建索引取数失败，将降级为子串匹配：%s", exc)

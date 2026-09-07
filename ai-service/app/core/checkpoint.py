@@ -15,6 +15,7 @@
     RedisDBCheckpointer，aget miss 时查 DB + 回填 Redis，aput 时双写 DB。
     DB 灾备层自带 singleflight（防击穿）+ 空值缓存（防穿透）+ TTL 抖动（防雪崩）。
 """
+
 from __future__ import annotations
 
 import logging
@@ -40,7 +41,9 @@ def build_checkpointer():
                 "refresh_on_read": True,  # 读取时续期，活跃 thread 不会被误清
             }
             saver = AsyncRedisSaver(redis_url=settings.redis_url, ttl=ttl)
-            logger.info("[Checkpoint] 使用 RedisSaver，TTL=%d 分钟", settings.checkpoint_ttl_minutes)
+            logger.info(
+                "[Checkpoint] 使用 RedisSaver，TTL=%d 分钟", settings.checkpoint_ttl_minutes
+            )
 
             # DB 灾备包装：防止 Redis TTL 过期导致会话中断
             if settings.checkpoint_db_fallback:

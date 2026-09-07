@@ -14,6 +14,7 @@
   - 失败即降级：任何异常都返回 [] / 0，不抛给主链路（BM25 单路兜底）；
   - 统一接口：对外暴露 upsert / query 语义，上层不感知 Milvus 细节。
 """
+
 from __future__ import annotations
 
 import logging
@@ -33,6 +34,7 @@ _available: bool | None = None  # None=未探测；探测后缓存
 # 后端适配器（鸭子类型：实现 upsert / query 两个方法）
 # =============================================================================
 
+
 class _MilvusBackend:
     """Milvus 后端（生产唯一）。
 
@@ -43,7 +45,8 @@ class _MilvusBackend:
     """
 
     def __init__(self):
-        from pymilvus import MilvusClient, DataType  # type: ignore
+        from pymilvus import DataType, MilvusClient  # type: ignore
+
         self._MilvusClient = MilvusClient
         self._DataType = DataType
         self._client = MilvusClient(
@@ -56,7 +59,9 @@ class _MilvusBackend:
         self._ensure_collection()
         logger.info(
             "[VectorStore] Milvus 就绪，uri=%s collection=%s dim=%d",
-            settings.milvus_uri, self._collection, self._dim,
+            settings.milvus_uri,
+            self._collection,
+            self._dim,
         )
 
     def _ensure_collection(self):
@@ -121,16 +126,19 @@ class _MilvusBackend:
 # 工厂 + 可用性探测
 # =============================================================================
 
+
 def _check_available() -> bool:
     """探测后端依赖是否可用。结果缓存，缺失只告警一次。"""
     global _available
     if _available is None:
         try:
             import pymilvus  # noqa: F401
+
             _available = True
         except ImportError as exc:
             logger.warning(
-                "[VectorStore] pymilvus 未安装，向量召回降级为 BM25 单路：%s", exc,
+                "[VectorStore] pymilvus 未安装，向量召回降级为 BM25 单路：%s",
+                exc,
             )
             _available = False
     return _available
@@ -148,6 +156,7 @@ def _get_backend():
 # 公共接口（upsert_coaches / search）—— 上层不感知后端差异
 # =============================================================================
 
+
 def upsert_coaches(coaches: list[dict[str, Any]]) -> int:
     """批量 upsert 教练向量（启动 / 教练更新时调用）。不可用时返回 0。"""
     if not coaches or not _check_available():
@@ -155,8 +164,7 @@ def upsert_coaches(coaches: list[dict[str, Any]]) -> int:
     try:
         backend = _get_backend()
         texts = [
-            f"{c.get('name', '')} {c.get('bio', '')} {c.get('city_name', '')}"
-            for c in coaches
+            f"{c.get('name', '')} {c.get('bio', '')} {c.get('city_name', '')}" for c in coaches
         ]
         vectors = embed(texts)
         if not vectors.size:
@@ -187,7 +195,7 @@ def search(query: str, top_k: int = 50) -> list[tuple[int, float]]:
         ids = [int(m["coach_id"]) for m in result["metadatas"][0]]
         # cosine distance → similarity = 1 - dist
         sims = [float(1 - d) for d in result["distances"][0]]
-        return list(zip(ids, sims))
+        return list(zip(ids, sims, strict=True))
     except Exception as exc:  # noqa: BLE001
         logger.warning("[VectorStore] 召回失败，降级为空：%s", exc)
         return []

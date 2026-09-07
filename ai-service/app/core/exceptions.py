@@ -8,6 +8,7 @@
 约定：业务层抛 `AIError` 子类，main.py 注册一个全局 handler 统一转成
 `{"code": ..., "msg": ..., "request_id": ...}` 的 JSON 响应。
 """
+
 from __future__ import annotations
 
 

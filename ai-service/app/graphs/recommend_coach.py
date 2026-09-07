@@ -18,10 +18,11 @@
   • 全程 Pydantic 强类型 + normalize 结构适配层，拒绝 LLM 漂移引发硬失败。
   • 所有循环都有 refine_count / reason_attempts 硬上限，保证图必终止。
 """
+
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional, TypedDict
+from typing import Any, TypedDict
 
 from app.clients.circuit_breaker import llm_breaker
 from app.clients.hybrid import hybrid_match_scores
@@ -43,10 +44,10 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 # Loop 工程（Phase 1）参数：循环/重试/门控的硬上限，保证图必终止。
 # =============================================================================
-MAX_INTENT_RETRIES = 3    # Node1 意图抽取失败重试次数
-MAX_REFINE = 3            # Node2 空结果 → 放宽过滤的最大轮数
-MAX_REASON_RETRIES = 2    # Node3 推荐理由质量不达标的重写次数
-REASON_MAX_LEN = 120      # 推荐理由长度上限（字），超过即判质量不达标
+MAX_INTENT_RETRIES = 3  # Node1 意图抽取失败重试次数
+MAX_REFINE = 3  # Node2 空结果 → 放宽过滤的最大轮数
+MAX_REASON_RETRIES = 2  # Node3 推荐理由质量不达标的重写次数
+REASON_MAX_LEN = 120  # 推荐理由长度上限（字），超过即判质量不达标
 
 
 # =============================================================================
@@ -54,23 +55,23 @@ REASON_MAX_LEN = 120      # 推荐理由长度上限（字），超过即判质�
 # =============================================================================
 class RecommendState(TypedDict, total=False):
     # 入参
-    user_query: str                 # 用户原始自然语言
-    city_code_override: str         # 小程序端已知用户城市时可以强制覆盖，避免 LLM 抽错
-    top_n: int                      # 返回多少个教练，默认 3
+    user_query: str  # 用户原始自然语言
+    city_code_override: str  # 小程序端已知用户城市时可以强制覆盖，避免 LLM 抽错
+    top_n: int  # 返回多少个教练，默认 3
     # 节点中间产物
-    intent: dict[str, Any]          # Node 1 输出：IntentExtraction.model_dump()
-    candidates: list[dict[str, Any]]# Node 2 输出：list[CoachCandidate.model_dump()]
+    intent: dict[str, Any]  # Node 1 输出：IntentExtraction.model_dump()
+    candidates: list[dict[str, Any]]  # Node 2 输出：list[CoachCandidate.model_dump()]
     matched_course: dict[str, Any]  # Node 2 输出：匹配课程 {name, price, category}
-    over_budget: bool               # Node 2 输出：匹配课程是否超预算
+    over_budget: bool  # Node 2 输出：匹配课程是否超预算
     # 最终输出
-    result: dict[str, Any]          # RecommendResult.model_dump()
-    used_mock: bool                 # 是否走了 mock 路径
+    result: dict[str, Any]  # RecommendResult.model_dump()
+    used_mock: bool  # 是否走了 mock 路径
     # Loop 控制字段（Phase 1）：条件路由 + 循环计数
-    route: str                      # ConditionalRouter 的分支 key（Node2/Node3 写回）
-    intent_errors: list[str]        # Node1 每次抽取失败原因（累加修正提示）
-    refine_count: int               # Node2 空结果后已放宽过滤的次数
-    reason_attempts: int            # Node3 推荐理由已重写次数
-    reason_feedback: str            # Node3 上次理由被拒原因（喂回重写）
+    route: str  # ConditionalRouter 的分支 key（Node2/Node3 写回）
+    intent_errors: list[str]  # Node1 每次抽取失败原因（累加修正提示）
+    refine_count: int  # Node2 空结果后已放宽过滤的次数
+    reason_attempts: int  # Node3 推荐理由已重写次数
+    reason_feedback: str  # Node3 上次理由被拒原因（喂回重写）
 
 
 # =============================================================================
@@ -234,7 +235,7 @@ _SPEC_SYNONYMS: dict[str, list[str]] = {
 # ---------------------------------------------------------------------------
 # 打分辅助：语义匹配 / 课程匹配 / 预算 / 档期 / 距离
 # ---------------------------------------------------------------------------
-def _expand_keywords(specialization: Optional[str], tags: list[str]) -> list[str]:
+def _expand_keywords(specialization: str | None, tags: list[str]) -> list[str]:
     """把用户的 specialization + tags 展开成可用于 bio 子串匹配的关键词集合。"""
     kws: list[str] = []
     for t in list(tags or []) + [specialization or ""]:
@@ -265,8 +266,9 @@ def _match_bio_score(bio: str, keywords: list[str]) -> int:
     return min(100, 50 + 30 + min(20, (len(hits) - 1) * 10))
 
 
-def _match_course(specialization: Optional[str], tags: list[str],
-                  courses: list[dict[str, Any]]) -> Optional[dict[str, Any]]:
+def _match_course(
+    specialization: str | None, tags: list[str], courses: list[dict[str, Any]]
+) -> dict[str, Any] | None:
     """从课程目录挑一门最匹配用户目标的课（用于参考价 + 预算过滤）。"""
     if not courses:
         return None
@@ -283,15 +285,17 @@ def _match_course(specialization: Optional[str], tags: list[str],
     return best
 
 
-def _apply_budget(matched: Optional[dict[str, Any]], max_price: Optional[float],
-                  courses: list[dict[str, Any]]) -> tuple[Optional[dict[str, Any]], bool]:
+def _apply_budget(
+    matched: dict[str, Any] | None, max_price: float | None, courses: list[dict[str, Any]]
+) -> tuple[dict[str, Any] | None, bool]:
     """预算过滤：优先挑「同类且预算内」的课；没有则保留原课并标记超预算。"""
     if matched is None:
         return None, False
     if max_price is None or float(matched.get("price") or 0) <= float(max_price):
         return matched, False
     cheaper = [
-        c for c in courses
+        c
+        for c in courses
         if c.get("category") == matched.get("category")
         and float(c.get("price") or 0) <= float(max_price)
     ]
@@ -300,7 +304,7 @@ def _apply_budget(matched: Optional[dict[str, Any]], max_price: Optional[float],
     return matched, True
 
 
-def _time_bucket(time_slot: Optional[str]) -> Optional[str]:
+def _time_bucket(time_slot: str | None) -> str | None:
     """把用户时段粗分成 morning/afternoon/evening；无法判断返回 None。"""
     if not time_slot:
         return None
@@ -327,7 +331,7 @@ def _slot_bucket(slot: str) -> str:
     return "evening"
 
 
-def _schedule_ratio(slots: list[str], bucket: Optional[str]) -> float:
+def _schedule_ratio(slots: list[str], bucket: str | None) -> float:
     """档期匹配比（0~1）。"""
     if bucket is None:
         return 1.0 if slots else 0.5  # 没指定时段：有档期给满，无档期给 0.5 兜底
@@ -511,7 +515,7 @@ SYSTEM_NODE3 = load_prompt("recommend_node3_reason")
 def _mock_generate_reason(
     intent: dict[str, Any],
     candidates: list[dict[str, Any]],
-    matched_course: Optional[dict[str, Any]] = None,
+    matched_course: dict[str, Any] | None = None,
     over_budget: bool = False,
 ) -> str:
     goal = intent.get("user_goal") or "找合适的教练"
@@ -528,7 +532,7 @@ def _mock_generate_reason(
     )
 
 
-def _reason_quality_issue(reason: str, candidates: list[dict[str, Any]]) -> Optional[str]:
+def _reason_quality_issue(reason: str, candidates: list[dict[str, Any]]) -> str | None:
     """推荐理由质量门控：返回 None 表示合格，否则返回「不合格原因」。
 
     判定：空 / 超过长度上限 / 没提到任何候选教练姓名。
@@ -564,13 +568,16 @@ async def generate_reason(state: RecommendState) -> dict[str, Any]:
     if used_mock:
         reason = _mock_generate_reason(intent, candidates_dicts, matched_course, over_budget)
     else:
-        top_coaches_brief = "\n".join(
-            [
-                f"- {c.name}（{['初','中','高','金'][c.level-1]}牌，评分{c.rating}，"
-                f"擅长：{c.bio or c.specialization or '未填写'}，参考课 ¥{c.price:.0f}，综合分{c.score_total:.1f}）"
-                for c in candidates_objs
-            ]
-        ) or "（无候选）"
+        top_coaches_brief = (
+            "\n".join(
+                [
+                    f"- {c.name}（{['初', '中', '高', '金'][c.level - 1]}牌，评分{c.rating}，"
+                    f"擅长：{c.bio or c.specialization or '未填写'}，参考课 ¥{c.price:.0f}，综合分{c.score_total:.1f}）"
+                    for c in candidates_objs
+                ]
+            )
+            or "（无候选）"
+        )
         user = f"用户目标：{intent.get('user_goal') or user_query}"
         if reason_feedback:
             user += f"\n\n【重写要求】上次推荐理由被拒，原因：{reason_feedback}。请针对该问题重写。"
@@ -604,7 +611,9 @@ async def generate_reason(state: RecommendState) -> dict[str, Any]:
         }
     if issue is not None:
         # 重写耗尽仍不达标：回退 mock 模板（确定性可接受，保证终止）
-        logger.warning("[Recommend Node3] 理由重写 %d 次仍不达标，回退 mock 模板", MAX_REASON_RETRIES)
+        logger.warning(
+            "[Recommend Node3] 理由重写 %d 次仍不达标，回退 mock 模板", MAX_REASON_RETRIES
+        )
         reason = _mock_generate_reason(intent, candidates_dicts, matched_course, over_budget)
         used_mock = True
 
@@ -641,7 +650,9 @@ _router_retrieve = ConditionalRouter(
     mapping={"refine": "relax_filters", "reason": "generate_reason"},
     default="generate_reason",
 )
-_builder.add_conditional_edges("retrieve_and_rank", _router_retrieve.route, _router_retrieve.edges())
+_builder.add_conditional_edges(
+    "retrieve_and_rank", _router_retrieve.route, _router_retrieve.edges()
+)
 _builder.add_edge("relax_filters", "retrieve_and_rank")
 
 # Node3 → 质量不达标回本节点重写，达标才结束

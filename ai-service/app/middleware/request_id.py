@@ -6,6 +6,7 @@
 注意（Starlette 已知行为）：BaseHTTPMiddleware 里 set 的 contextvar 能传播到下游端点
 （正向可用），但端点里 set 的反向传不回中间件。这里只在中间件 set、下游只读，故安全。
 """
+
 from __future__ import annotations
 
 from uuid import uuid4

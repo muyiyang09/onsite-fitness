@@ -6,10 +6,11 @@
   - 用 lru_cache 缓存，避免每个请求都读磁盘；
   - 定位用 `Path(__file__).parent`，配合 pyproject 的 package-data 把 YAML 打进安装包。
 """
+
 from __future__ import annotations
 
 import logging
-from functools import lru_cache
+from functools import cache
 from pathlib import Path
 
 import yaml
@@ -19,11 +20,13 @@ logger = logging.getLogger(__name__)
 _PROMPT_DIR = Path(__file__).parent
 
 
-@lru_cache(maxsize=None)
+@cache
 def _load_raw(name: str) -> dict:
     path = _PROMPT_DIR / f"{name}.yaml"
     if not path.exists():
-        raise FileNotFoundError(f"Prompt 文件不存在：{path}（请确认 app/prompts/{name}.yaml 已打包）")
+        raise FileNotFoundError(
+            f"Prompt 文件不存在：{path}（请确认 app/prompts/{name}.yaml 已打包）"
+        )
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     logger.info("加载 Prompt：%s (version=%s)", data.get("name"), data.get("version"))
     return data

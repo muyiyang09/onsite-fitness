@@ -4,10 +4,11 @@ AI 服务只读现有 sports_takeout 库（coach / course / category / coach_sch
 连接参数来自 config.settings.mysql_dsn。故意用「只读 + 惰性 engine + 查询函数」，
 不引入 ORM 模型，保持与 Java 后端解耦：后端改了表，AI 服务只需改 SQL 字符串。
 """
+
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
@@ -16,7 +17,7 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-_engine: Optional[Engine] = None
+_engine: Engine | None = None
 
 
 def get_engine() -> Engine:
@@ -29,7 +30,7 @@ def get_engine() -> Engine:
     if _engine is None:
         _engine = create_engine(
             settings.mysql_dsn,
-            pool_pre_ping=True,   # 取连接前先 ping，避免拿到失效连接
+            pool_pre_ping=True,  # 取连接前先 ping，避免拿到失效连接
             pool_recycle=3600,
             pool_size=settings.mysql_pool_size,
             max_overflow=settings.mysql_max_overflow,
@@ -40,22 +41,22 @@ def get_engine() -> Engine:
     return _engine
 
 
-def fetch_all(sql: str, params: Optional[dict[str, Any]] = None) -> list[dict[str, Any]]:
+def fetch_all(sql: str, params: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     """执行只读查询，返回 list[dict]（每行一个 dict，key 为列名）。"""
     with get_engine().connect() as conn:
         rows = conn.execute(text(sql), params or {})
         cols = list(rows.keys())
-        return [dict(zip(cols, row)) for row in rows]
+        return [dict(zip(cols, row, strict=True)) for row in rows]
 
 
-def execute(sql: str, params: Optional[dict[str, Any]] = None) -> int:
+def execute(sql: str, params: dict[str, Any] | None = None) -> int:
     """执行写操作（INSERT/UPDATE），返回受影响行数。用于审计日志等旁路写入。"""
     with get_engine().begin() as conn:  # begin() 自动 commit / 异常回滚
         result = conn.execute(text(sql), params or {})
         return result.rowcount
 
 
-async def afetch_all(sql: str, params: Optional[dict[str, Any]] = None) -> list[dict[str, Any]]:
+async def afetch_all(sql: str, params: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     """异步版 fetch_all。用线程池执行同步查询，不阻塞事件循环。
 
     为什么不换 aiomysql 驱动：DB 读只有毫秒级，不是延迟瓶颈（LLM 才是），
@@ -66,7 +67,7 @@ async def afetch_all(sql: str, params: Optional[dict[str, Any]] = None) -> list[
     return await asyncio.to_thread(fetch_all, sql, params)
 
 
-async def aexecute(sql: str, params: Optional[dict[str, Any]] = None) -> int:
+async def aexecute(sql: str, params: dict[str, Any] | None = None) -> int:
     """异步版 execute。审计日志等旁路写入用（fire-and-forget）。"""
     import asyncio
 

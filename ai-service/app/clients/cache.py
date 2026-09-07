@@ -16,6 +16,7 @@
     避免热点 query 瞬间 N 路并发打同一个 LLM 调用。
   锁释放用 Lua CAS（get==value→del），杜绝「锁已过期被他人接管后误删」的 TOCTOU。
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -23,7 +24,7 @@ import hashlib
 import json
 import logging
 import random
-from typing import Any, Optional
+from typing import Any
 from uuid import uuid4
 
 import redis.asyncio as redis
@@ -33,19 +34,21 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-_JITTER_RATIO = 0.10                    # 雪崩防护：±10% 抖动 TTL
-_LOCK_TTL_SECONDS = 120                 # 击穿防护：锁 TTL 必须 > 最坏图执行时长（llm_timeout=60s）
+_JITTER_RATIO = 0.10  # 雪崩防护：±10% 抖动 TTL
+_LOCK_TTL_SECONDS = 120  # 击穿防护：锁 TTL 必须 > 最坏图执行时长（llm_timeout=60s）
 _POLL_INTERVAL, _POLL_BUDGET = 0.5, 8.0  # 等待者预算：8 秒拿不到就自己跑图（避免活锁）
 
 # 哨兵：Redis 异常时 try_acquire_build_lock 返回它，表示「没抢到锁但也不用释放」，
 # 从而让 release_build_lock 能安全跳过（fail-open 语义，不误 eval）。
 _NO_LOCK = "no-lock"
 
-_UNLOCK_LUA = ("if redis.call('get',KEYS[1]) == ARGV[1] "
-               "then return redis.call('del',KEYS[1]) else return 0 end")
+_UNLOCK_LUA = (
+    "if redis.call('get',KEYS[1]) == ARGV[1] "
+    "then return redis.call('del',KEYS[1]) else return 0 end"
+)
 
 
-def make_cache_key(user_query: str, top_n: int, city_override: Optional[str] = None) -> str:
+def make_cache_key(user_query: str, top_n: int, city_override: str | None = None) -> str:
     """缓存 key：md5(query|top_n|city)。"""
     raw = f"{user_query}|{top_n}|{city_override or ''}"
     return f"recommend:{hashlib.md5(raw.encode('utf-8')).hexdigest()}"
@@ -56,7 +59,7 @@ def _jittered(ttl: int) -> int:
     return max(1, int(ttl * (1 + random.uniform(-_JITTER_RATIO, _JITTER_RATIO))))
 
 
-async def get_cache(key: str) -> Optional[dict[str, Any]]:
+async def get_cache(key: str) -> dict[str, Any] | None:
     """读缓存。命中返回 dict，未命中 / Redis 不可用返回 None。"""
     try:
         r = redis.Redis(connection_pool=get_pool())
@@ -67,7 +70,7 @@ async def get_cache(key: str) -> Optional[dict[str, Any]]:
         return None
 
 
-async def set_cache(key: str, value: dict[str, Any], ttl: Optional[int] = None) -> None:
+async def set_cache(key: str, value: dict[str, Any], ttl: int | None = None) -> None:
     """写缓存（TTL 抖动）。Redis 不可用时静默跳过。"""
     try:
         r = redis.Redis(connection_pool=get_pool())
@@ -80,7 +83,7 @@ async def set_cache(key: str, value: dict[str, Any], ttl: Optional[int] = None) 
         logger.debug("缓存写降级（Redis 不可用）：%s", exc)
 
 
-async def try_acquire_build_lock(key: str) -> Optional[str]:
+async def try_acquire_build_lock(key: str) -> str | None:
     """singleflight 抢锁：抢到才允许回源构图。
 
     返回：
@@ -97,7 +100,7 @@ async def try_acquire_build_lock(key: str) -> Optional[str]:
         return _NO_LOCK
 
 
-async def release_build_lock(key: str, token: Optional[str]) -> None:
+async def release_build_lock(key: str, token: str | None) -> None:
     """Lua CAS 原子释放：token 不匹配（锁已过期被他人接管）不误删。
 
     对 None（未抢到）与 _NO_LOCK（Redis 挂了）直接跳过，不 eval。
@@ -106,13 +109,12 @@ async def release_build_lock(key: str, token: Optional[str]) -> None:
         return
     try:
         r = redis.Redis(connection_pool=get_pool())
-        await asyncio.wait_for(
-            r.eval(_UNLOCK_LUA, 1, f"{key}:lock", token), timeout=2.0)
+        await asyncio.wait_for(r.eval(_UNLOCK_LUA, 1, f"{key}:lock", token), timeout=2.0)
     except Exception as exc:  # noqa: BLE001
         logger.debug("锁释放失败（忽略）：%s", exc)
 
 
-async def wait_for_result(key: str, budget: float = _POLL_BUDGET) -> Optional[dict[str, Any]]:
+async def wait_for_result(key: str, budget: float = _POLL_BUDGET) -> dict[str, Any] | None:
     """等待别人构图的结果：预算内轮询缓存，拿到即返回，超时返回 None（调用方自己兜底）。"""
     loop = asyncio.get_event_loop()
     deadline = loop.time() + budget

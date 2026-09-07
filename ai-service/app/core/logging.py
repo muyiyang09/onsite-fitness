@@ -8,6 +8,7 @@
   - 中间件在请求开始时 set，结束时 reset，所有 `logger.info/warning` 自动带上；
   - 单进程单次 setup，幂等（避免 uvicorn reload 时重复 addHandler）。
 """
+
 from __future__ import annotations
 
 import json

@@ -10,6 +10,7 @@
 当前落地：核验用确定性规则（编号格式/有效期/姓名），预留 ReAct 工具循环位；
 HITL 用 interrupt 但默认关闭（hitl_enabled=False），打开后需配合 resume 端点。
 """
+
 from __future__ import annotations
 
 import logging
@@ -38,11 +39,11 @@ class CertReviewState(TypedDict, total=False):
     cert_number: str
     holder_name: str
     image_url: str
-    fields: dict[str, Any]          # CertificateFields.model_dump()
+    fields: dict[str, Any]  # CertificateFields.model_dump()
     verifications: list[dict[str, Any]]
-    risk_level: str                 # low/medium/high
-    suggestion: str                 # approve/reject/manual_review
-    result: dict[str, Any]          # CertReviewResult.model_dump()
+    risk_level: str  # low/medium/high
+    suggestion: str  # approve/reject/manual_review
+    result: dict[str, Any]  # CertReviewResult.model_dump()
     route: str
     used_mock: bool
 
@@ -66,13 +67,20 @@ async def extract_fields(state: CertReviewState) -> dict[str, Any]:
         ).model_dump()
     else:
         from app.prompts.loader import load_prompt
+
         try:
             obj = await llm_breaker.call(
                 achat_structured,
-                [{"role": "system", "content": load_prompt("cert_extract_fields")},
-                 {"role": "user", "content": (
-                     f"证书类型：{state.get('cert_type')}\n证书编号：{state.get('cert_number')}\n"
-                     f"持有人：{state.get('holder_name')}" )}],
+                [
+                    {"role": "system", "content": load_prompt("cert_extract_fields")},
+                    {
+                        "role": "user",
+                        "content": (
+                            f"证书类型：{state.get('cert_type')}\n证书编号：{state.get('cert_number')}\n"
+                            f"持有人：{state.get('holder_name')}"
+                        ),
+                    },
+                ],
                 CertificateFields,
             )
             fields = obj.model_dump()
@@ -103,12 +111,17 @@ async def verify(state: CertReviewState) -> dict[str, Any]:
     name_ok = bool(holder and len(holder) >= 2)
 
     verifications = [
-        VerificationItem(check="编号格式", passed=number_ok,
-                         detail=f"期望前缀 {prefix}+6位数字" if not number_ok else "格式正确").model_dump(),
-        VerificationItem(check="有效期", passed=expiry_ok,
-                         detail="已过期" if not expiry_ok else "有效期内").model_dump(),
-        VerificationItem(check="姓名匹配", passed=name_ok,
-                         detail="姓名有效" if name_ok else "姓名缺失").model_dump(),
+        VerificationItem(
+            check="编号格式",
+            passed=number_ok,
+            detail=f"期望前缀 {prefix}+6位数字" if not number_ok else "格式正确",
+        ).model_dump(),
+        VerificationItem(
+            check="有效期", passed=expiry_ok, detail="已过期" if not expiry_ok else "有效期内"
+        ).model_dump(),
+        VerificationItem(
+            check="姓名匹配", passed=name_ok, detail="姓名有效" if name_ok else "姓名缺失"
+        ).model_dump(),
     ]
     logger.info("[Cert Verify] 核验完成：%s", [v["passed"] for v in verifications])
     return {"verifications": verifications}
@@ -139,12 +152,14 @@ async def hitl_checkpoint(state: CertReviewState) -> dict[str, Any]:
     打开后：interrupt 暂停，管理员通过 /resume 提交决定后恢复。
     """
     if settings.hitl_enabled:
-        decision = interrupt({
-            "prompt": f"证书审核人工确认（风险等级：{state.get('risk_level')}）",
-            "fields": state.get("fields"),
-            "verifications": state.get("verifications"),
-            "suggestion": state.get("suggestion"),
-        })
+        decision = interrupt(
+            {
+                "prompt": f"证书审核人工确认（风险等级：{state.get('risk_level')}）",
+                "fields": state.get("fields"),
+                "verifications": state.get("verifications"),
+                "suggestion": state.get("suggestion"),
+            }
+        )
         if decision.get("action") == "reject":
             state = {**state, "suggestion": "reject"}
         else:
@@ -155,10 +170,13 @@ async def hitl_checkpoint(state: CertReviewState) -> dict[str, Any]:
 
 def _build_result(state: CertReviewState) -> dict[str, Any]:
     from app.schemas.cert_review import CertReviewResult
+
     return CertReviewResult(
         coach_id=int(state.get("coach_id") or 0),
         fields=CertificateFields.model_validate(state.get("fields") or {}),
-        verifications=[VerificationItem.model_validate(v) for v in (state.get("verifications") or [])],
+        verifications=[
+            VerificationItem.model_validate(v) for v in (state.get("verifications") or [])
+        ],
         risk_level=state.get("risk_level") or "low",
         suggestion=state.get("suggestion") or "manual_review",
         used_mock=bool(state.get("used_mock")) or is_mock_mode(),

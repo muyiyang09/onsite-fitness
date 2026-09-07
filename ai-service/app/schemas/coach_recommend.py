@@ -1,11 +1,12 @@
 """教练推荐相关 Pydantic Schema：
-      IntentExtraction（Node 1 输出：用户自然语言 → 结构化筛选条件）
-      CoachCandidate   （Node 2 输出：候选教练 + 各项子打分 + 综合分）
-      RecommendResult  （Graph 最终输出：Top3 教练 + 总推荐理由 + 标签）
+IntentExtraction（Node 1 输出：用户自然语言 → 结构化筛选条件）
+CoachCandidate   （Node 2 输出：候选教练 + 各项子打分 + 综合分）
+RecommendResult  （Graph 最终输出：Top3 教练 + 总推荐理由 + 标签）
 """
+
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -22,15 +23,15 @@ class IntentExtraction(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    city_name: Optional[str] = Field(
+    city_name: str | None = Field(
         default=None,
         description="服务城市，中文全称，如 '北京市'。如果只提到区也反推所属城市。",
     )
-    district: Optional[str] = Field(
+    district: str | None = Field(
         default=None,
         description="区县 / 商圈，如 '朝阳区'、'望京'、'科技园'。不限制则为 null。",
     )
-    specialization: Optional[str] = Field(
+    specialization: str | None = Field(
         default=None,
         description="主要训练目标：减脂塑形 / 增肌训练 / 拉伸放松 / 产后恢复 / 运动康复 等",
     )
@@ -38,24 +39,22 @@ class IntentExtraction(BaseModel):
         default_factory=list,
         description="更细的子标签：['减脂','体态矫正','孕产恢复','青少年体能'] 等",
     )
-    level: Optional[Literal[1, 2, 3, 4]] = Field(
+    level: Literal[1, 2, 3, 4] | None = Field(
         default=None,
         description="期望教练等级：1=初级 2=中级 3=高级 4=金牌。没提则 null（不限）。",
     )
-    min_rating: Optional[float] = Field(
+    min_rating: float | None = Field(
         default=None, ge=0.0, le=5.0, description="期望最低评分（0~5）。"
     )
-    max_price: Optional[float] = Field(
-        default=None, ge=0, description="单次课程预算上限（元）。"
-    )
-    time_slot: Optional[str] = Field(
+    max_price: float | None = Field(default=None, ge=0, description="单次课程预算上限（元）。")
+    time_slot: str | None = Field(
         default=None,
         description="期望时段，如 '周末上午'、'工作日晚上'、'每天 09:00-10:00'。",
     )
-    male_only: Optional[bool] = Field(
+    male_only: bool | None = Field(
         default=None, description="是否要求男教练：True/False/None（用户没提则不限）。"
     )
-    user_goal: Optional[str] = Field(
+    user_goal: str | None = Field(
         default=None,
         description="用户一句话目标摘要，用于 Node 3 生成个性化推荐理由。如 '3 个月减 10 斤备婚'。",
     )
@@ -74,14 +73,14 @@ class CoachCandidate(BaseModel):
     service_radius_km: float = Field(description="服务半径 KM")
     city_name: str
     bio: str = Field(default="", description="教练简介/擅长（bio），用于生成差异化推荐理由。")
-    specialization: Optional[str] = Field(
+    specialization: str | None = Field(
         default=None, description="匹配课程分类（展示用「擅长领域」标签）。"
     )
-    course_name: Optional[str] = Field(
+    course_name: str | None = Field(
         default=None, description="匹配到的课程名称（同类教练相同，用于展示/下单）。"
     )
     price: float = Field(description="匹配课程的参考单价（元）。教练不直接定价，价格来自课程目录。")
-    distance_km_est: Optional[float] = Field(
+    distance_km_est: float | None = Field(
         default=None, description="估算距离（KM）。若 district 抽不到则为 null。"
     )
     schedule_match_ratio: float = Field(
@@ -128,10 +127,10 @@ class RecommendResult(BaseModel):
         default="",
         description="Node 3 生成的 2~3 句自然语言推荐理由。如：'为你推荐李教练，评分5.0（金牌），专注减脂8年，且在你预算内'。",
     )
-    matched_course_name: Optional[str] = Field(
+    matched_course_name: str | None = Field(
         default=None, description="为用户匹配到的参考课程名（用于展示/下单）。"
     )
-    matched_course_price: Optional[float] = Field(
+    matched_course_price: float | None = Field(
         default=None, description="参考课程单价（元），预算过滤后的价格。"
     )
     over_budget: bool = Field(

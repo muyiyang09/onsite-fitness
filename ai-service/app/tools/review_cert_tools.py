@@ -4,10 +4,11 @@
   - fetch_reviews：从 coach_review 表取教练评价（无数据/AI_MOCK_DB 回退 mock）；
   - fetch_certificate：从 coach_certificate 表取最新证书（无则返回 None）。
 """
+
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from app.clients.db import afetch_all
 from app.clients.llm import is_mock_db
@@ -48,7 +49,7 @@ async def fetch_reviews(coach_id: int, limit: int = 30) -> list[dict[str, Any]]:
     return [{"content": r, "rating": 5} for r in _MOCK_REVIEWS[:limit]]
 
 
-async def fetch_certificate(coach_id: int) -> Optional[dict[str, Any]]:
+async def fetch_certificate(coach_id: int) -> dict[str, Any] | None:
     """取教练最新一条待审核证书。无则返回 None。"""
     if is_mock_db():
         return None
@@ -68,28 +69,32 @@ async def fetch_certificate(coach_id: int) -> Optional[dict[str, Any]]:
 # ---------------------------------------------------------------------------
 # 注册工具
 # ---------------------------------------------------------------------------
-TOOL_REGISTRY.register(Tool(
-    name="fetch_reviews",
-    description="取教练最近 N 条评价，返回 [{content, rating}]",
-    input_schema={
-        "type": "object",
-        "properties": {
-            "coach_id": {"type": "integer"},
-            "limit": {"type": "integer", "default": 30},
+TOOL_REGISTRY.register(
+    Tool(
+        name="fetch_reviews",
+        description="取教练最近 N 条评价，返回 [{content, rating}]",
+        input_schema={
+            "type": "object",
+            "properties": {
+                "coach_id": {"type": "integer"},
+                "limit": {"type": "integer", "default": 30},
+            },
+            "required": ["coach_id"],
         },
-        "required": ["coach_id"],
-    },
-    handler=fetch_reviews,
-))
-TOOL_REGISTRY.register(Tool(
-    name="fetch_certificate",
-    description="取教练最新一条待审核证书，返回 {cert_type, cert_number, holder_name, image_url} 或 null",
-    input_schema={
-        "type": "object",
-        "properties": {"coach_id": {"type": "integer"}},
-        "required": ["coach_id"],
-    },
-    handler=fetch_certificate,
-))
+        handler=fetch_reviews,
+    )
+)
+TOOL_REGISTRY.register(
+    Tool(
+        name="fetch_certificate",
+        description="取教练最新一条待审核证书，返回 {cert_type, cert_number, holder_name, image_url} 或 null",
+        input_schema={
+            "type": "object",
+            "properties": {"coach_id": {"type": "integer"}},
+            "required": ["coach_id"],
+        },
+        handler=fetch_certificate,
+    )
+)
 
 __all__ = ["fetch_reviews", "fetch_certificate"]

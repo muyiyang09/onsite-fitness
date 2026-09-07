@@ -1,9 +1,8 @@
 """配置中心：基于 pydantic-settings 的强类型配置。
 通过 .env 文件或环境变量加载，避免把密钥硬编码进代码。
 """
-from __future__ import annotations
 
-from typing import Optional
+from __future__ import annotations
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -30,7 +29,7 @@ class Settings(BaseSettings):
         description="LiteLLM 模型标识，如 deepseek/deepseek-chat / qwen/qwen-plus / openai/gpt-4o-mini",
     )
     llm_api_key: str = Field(default="", description="对应供应商的 API Key")
-    llm_base_url: Optional[str] = Field(
+    llm_base_url: str | None = Field(
         default=None,
         description="自定义兼容端点。留空时 LiteLLM 会根据模型名选择官方端点。",
     )
@@ -56,7 +55,7 @@ class Settings(BaseSettings):
     redis_host: str = "127.0.0.1"
     redis_port: int = 6379
     redis_db: int = 1
-    redis_password: Optional[str] = None
+    redis_password: str | None = None
 
     # —— 混合检索（#04 RAG 升级）——
     # 设计：混合检索是「加强」不是「替代」——BM25 便宜且离线可跑，默认开；
@@ -74,7 +73,9 @@ class Settings(BaseSettings):
     rrf_top_k: int = Field(default=30, description="RRF 融合后取前 N 进入重排/打分")
 
     # —— 向量召回 / 重排模型（预留：重依赖未装时自动降级为 BM25 单路）——
-    embedding_model: str = Field(default="BAAI/bge-m3", description="Embedding 模型名（HuggingFace）")
+    embedding_model: str = Field(
+        default="BAAI/bge-m3", description="Embedding 模型名（HuggingFace）"
+    )
     embedding_device: str = Field(default="cpu", description="cpu / cuda / mps")
     embedding_use_fp16: bool = Field(default=True)
     # 向量库：Milvus 单后端（生产唯一）。pymilvus 未装 / Milvus 不可达时，向量召回降级为 BM25 单路
@@ -82,7 +83,9 @@ class Settings(BaseSettings):
         default="http://127.0.0.1:19530",
         description="Milvus 连接 URI，如 http://127.0.0.1:19530；Zilliz 云用 https://xxx.zillizcloud.com",
     )
-    milvus_token: str = Field(default="", description="Milvus 认证 token（本地部署留空；Zilliz 云用 apikey）")
+    milvus_token: str = Field(
+        default="", description="Milvus 认证 token（本地部署留空；Zilliz 云用 apikey）"
+    )
     milvus_database: str = Field(default="default", description="Milvus 数据库名")
     milvus_collection: str = Field(default="ai_vector_coach", description="向量 collection 名")
     milvus_dim: int = Field(default=1024, description="向量维度（bge-m3=1024）")
@@ -104,7 +107,9 @@ class Settings(BaseSettings):
     token_global_daily_limit: int = Field(default=1000000, description="全局单日 token 上限")
     cb_fail_threshold: int = Field(default=5, description="LLM 连续失败 N 次触发熔断")
     cb_reset_timeout: int = Field(default=60, description="熔断开路后多久进入半开试探（秒）")
-    cache_enabled: bool = Field(default=True, description="是否启用推荐结果缓存（相同 query 24h 复用）")
+    cache_enabled: bool = Field(
+        default=True, description="是否启用推荐结果缓存（相同 query 24h 复用）"
+    )
     cache_ttl: int = Field(default=86400, description="缓存 TTL（秒），默认 24h")
 
     # —— MCP 工具层（#07，默认关：单 Agent 单进程直接调用够用）——
@@ -115,31 +120,44 @@ class Settings(BaseSettings):
     # —— Langfuse LLM 可观测性（#13，默认关：LLM 语义层 trace，未装包/未配置时全链路 no-op）——
     # 设计纪律与审计一致：旁路异步上报、fail-open（Langfuse 不可达只丢 trace 不影响主流程）。
     # 开启需先装可选依赖：pip install -e ".[langfuse]"
-    langfuse_enabled: bool = Field(default=False, description="是否启用 Langfuse（LLM trace/cost/eval 闭环）")
-    langfuse_public_key: str = Field(default="", description="Langfuse Public Key（项目 Settings → API Keys）")
+    langfuse_enabled: bool = Field(
+        default=False, description="是否启用 Langfuse（LLM trace/cost/eval 闭环）"
+    )
+    langfuse_public_key: str = Field(
+        default="", description="Langfuse Public Key（项目 Settings → API Keys）"
+    )
     langfuse_secret_key: str = Field(default="", description="Langfuse Secret Key")
     langfuse_host: str = Field(
         default="https://cloud.langfuse.com",
         description="Langfuse 地址：云 https://cloud.langfuse.com / 自部署 http://localhost:3000",
     )
     langfuse_sample_rate: float = Field(
-        default=1.0, ge=0.0, le=1.0, description="trace 采样率（0~1）；高峰期可调低，坏 case 按 request_id 强制查"
+        default=1.0,
+        ge=0.0,
+        le=1.0,
+        description="trace 采样率（0~1）；高峰期可调低，坏 case 按 request_id 强制查",
     )
 
     # —— 多 Agent（#08）——
     review_summary_enabled: bool = Field(default=True, description="是否启用评价摘要 Agent")
     cert_review_enabled: bool = Field(default=True, description="是否启用证书审核 Agent")
-    supervisor_enabled: bool = Field(default=False, description="统一入口 Supervisor（默认关，直接调子 Agent）")
-    hitl_enabled: bool = Field(default=False, description="是否启用 HITL 人工介入（证书审核最终确认，默认关）")
+    supervisor_enabled: bool = Field(
+        default=False, description="统一入口 Supervisor（默认关，直接调子 Agent）"
+    )
+    hitl_enabled: bool = Field(
+        default=False, description="是否启用 HITL 人工介入（证书审核最终确认，默认关）"
+    )
 
     # —— Checkpointer（上线加固：崩溃恢复 + 多副本共享状态 + DB 灾备）——
     checkpointer_backend: str = Field(
         default_factory=lambda: _default_checkpointer_backend(),
         pattern=r"^(memory|redis)$",
         description="Checkpointer 后端：memory(开发默认)/redis(prod 默认)。"
-                    "SERVICE_ENV=prod 时隐式切 redis，除非显式设置 CHECKPOINTER_BACKEND。",
+        "SERVICE_ENV=prod 时隐式切 redis，除非显式设置 CHECKPOINTER_BACKEND。",
     )
-    checkpoint_ttl_minutes: int = Field(default=60, description="Checkpoint TTL（分钟），教练推荐/摘要 1h 足够")
+    checkpoint_ttl_minutes: int = Field(
+        default=60, description="Checkpoint TTL（分钟），教练推荐/摘要 1h 足够"
+    )
     checkpoint_db_fallback: bool = Field(
         default=True,
         description="是否启用 DB 灾备层（Redis miss 时从 DB 读 state + 回填 Redis，防雪崩/穿透/击穿）",
@@ -151,8 +169,12 @@ class Settings(BaseSettings):
     service_env: str = Field(default="dev", pattern=r"^(dev|test|prod)$")
 
     # —— CORS（§6.31）：来源从 env 配置；credentials=True 时禁止 "*" ——
-    cors_origins: str = Field(default="", description="CORS 允许来源（csv）；留空时 dev 默认 *，prod 需显式配置")
-    cors_allow_credentials: bool = Field(default=True, description="是否允许携带凭据；True 时禁止 allow_origins 含 *")
+    cors_origins: str = Field(
+        default="", description="CORS 允许来源（csv）；留空时 dev 默认 *，prod 需显式配置"
+    )
+    cors_allow_credentials: bool = Field(
+        default=True, description="是否允许携带凭据；True 时禁止 allow_origins 含 *"
+    )
 
     @property
     def mysql_dsn(self) -> str:

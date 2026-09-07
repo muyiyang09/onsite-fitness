@@ -1,8 +1,8 @@
 """证书审核路由（含 HITL resume / cancel）。"""
+
 from __future__ import annotations
 
 import logging
-from typing import Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Header, Request
@@ -34,7 +34,7 @@ class ResumeIn(BaseModel):
 async def cert_review(
     payload: CertReviewIn,
     request: Request,
-    x_user_id: Optional[str] = Header(default=None),
+    x_user_id: str | None = Header(default=None),
 ):
     if not settings.cert_review_enabled:
         raise ValidationFailedError("证书审核 Agent 未启用")
@@ -45,7 +45,11 @@ async def cert_review(
     update_trace_meta(
         user_id=user_id,
         session_id=thread_id,
-        metadata={"request_id": request_id, "coach_id": payload.coach_id, "cert_type": payload.cert_type},
+        metadata={
+            "request_id": request_id,
+            "coach_id": payload.coach_id,
+            "cert_type": payload.cert_type,
+        },
         tags=["cert-review"],
     )
     try:
@@ -74,7 +78,9 @@ async def cert_review(
 
     # HITL 开启时：interrupt 暂停，返回 pending + thread_id，等管理员 resume
     if "__interrupt__" in state_out:
-        interrupt = [i.get("value") if isinstance(i, dict) else str(i) for i in state_out["__interrupt__"]]
+        interrupt = [
+            i.get("value") if isinstance(i, dict) else str(i) for i in state_out["__interrupt__"]
+        ]
         await hitl_state.set_status(thread_id, hitl_state._PENDING)
         spawn_audit(
             user_id=user_id,
@@ -110,7 +116,7 @@ async def resume_cert_review(
     thread_id: str,
     payload: ResumeIn,
     request: Request,
-    x_user_id: Optional[str] = Header(default=None),
+    x_user_id: str | None = Header(default=None),
 ) -> CertReviewResult:
     if not settings.hitl_enabled:
         raise ValidationFailedError("HITL 未启用")
@@ -167,7 +173,7 @@ async def resume_cert_review(
 async def cancel_cert_review(
     thread_id: str,
     request: Request,
-    x_user_id: Optional[str] = Header(default=None),
+    x_user_id: str | None = Header(default=None),
 ) -> dict[str, object]:
     if not settings.hitl_enabled:
         raise ValidationFailedError("HITL 未启用")

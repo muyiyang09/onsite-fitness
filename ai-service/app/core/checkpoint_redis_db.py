@@ -9,6 +9,7 @@
   - 空值缓存（防穿透）：刚查过 DB 确认无数据，短时间内不再查 DB；
   - 刷新续期（防雪崩）：Redis 侧 refresh_on_read=True 读时续期，活跃 thread 不被误清。
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -53,6 +54,7 @@ class RedisDBCheckpointer:
             self._empty_cache.pop(thread_id, None)
 
             from app.core import session_store
+
             try:
                 data = await session_store.get_state(thread_id)
             except Exception as exc:  # noqa: BLE001
@@ -80,19 +82,25 @@ class RedisDBCheckpointer:
                 pending_writes=data.get("pending_writes"),
             )
 
-    async def aput(self, config: dict[str, Any], checkpoint, metadata, new_versions) -> dict[str, Any]:
+    async def aput(
+        self, config: dict[str, Any], checkpoint, metadata, new_versions
+    ) -> dict[str, Any]:
         await self._inner.aput(config, checkpoint, metadata, new_versions)
 
         thread_id = self._thread_id(config)
         if thread_id:
             from app.core import session_store
+
             try:
-                await session_store.put_state(thread_id, {
-                    "checkpoint": checkpoint,
-                    "metadata": metadata,
-                    "parent_config": None,
-                    "pending_writes": None,
-                })
+                await session_store.put_state(
+                    thread_id,
+                    {
+                        "checkpoint": checkpoint,
+                        "metadata": metadata,
+                        "parent_config": None,
+                        "pending_writes": None,
+                    },
+                )
             except Exception as exc:  # noqa: BLE001
                 # DB 灾备写失败不影响主流程（Redis 已写成功）
                 logger.warning("[Checkpoint] DB 灾备写失败，thread_id=%s：%s", thread_id, exc)

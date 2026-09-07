@@ -6,6 +6,7 @@
 设计（fail-open）：Redis 不可用时状态读写降级为「无状态」——不阻断审核流程，
 代价是冲突检测失效（单副本场景可接受；多副本生产 Redis 是硬依赖，不会不可用）。
 """
+
 from __future__ import annotations
 
 import logging

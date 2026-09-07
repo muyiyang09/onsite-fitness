@@ -9,6 +9,7 @@
 dev 本地直调：把 `SERVICE_AUTH_TOKEN` 打进 .env，生成方式
 `python -c "import secrets;print(secrets.token_urlsafe(32))"`。
 """
+
 from __future__ import annotations
 
 import hmac

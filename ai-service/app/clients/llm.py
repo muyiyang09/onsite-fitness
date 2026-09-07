@@ -2,6 +2,7 @@
 用 OpenAI 兼容模式 + BaseChatModel 契约（参考经验 1674242），避免把「供应商选择」
 和「Agent/工具编排」耦合：换模型只改 .env 的 LLM_MODEL/LLM_API_KEY，上层代码 0 改动。
 """
+
 from __future__ import annotations
 
 import json
@@ -9,7 +10,7 @@ import logging
 import os
 import time
 from collections.abc import Iterable
-from typing import Any, Optional, Type, TypeVar, cast
+from typing import Any, TypeVar, cast
 
 from litellm import acompletion, completion
 from pydantic import BaseModel, ValidationError
@@ -36,7 +37,7 @@ def _record_generation(resp: Any, output: str) -> None:
     """
     if not langfuse_ready():
         return
-    usage_dict: Optional[dict[str, Any]] = None
+    usage_dict: dict[str, Any] | None = None
     usage = getattr(resp, "usage", None)
     if usage is not None:
         p = getattr(usage, "prompt_tokens", 0) or 0
@@ -49,6 +50,7 @@ def _record_generation(resp: Any, output: str) -> None:
         usage=usage_dict,
         metadata={"request_id": request_id_var.get()},
     )
+
 
 # =============================================================================
 # 通用参数：所有 LLM 请求走同一组配置，保证行为一致
@@ -77,10 +79,7 @@ def _strip_text(text: Any) -> str:
 @observe_span("llm.completion", as_type="generation")
 def chat(messages: Iterable[dict[str, str]]) -> str:
     """同步调用 LLM，返回纯文本回答。"""
-    msgs = [
-        {"role": m["role"], "content": _strip_text(m.get("content", ""))}
-        for m in messages
-    ]
+    msgs = [{"role": m["role"], "content": _strip_text(m.get("content", ""))} for m in messages]
     resp = completion(messages=msgs, **_common_kwargs())
     try:
         text = _strip_text(resp.choices[0].message.content)
@@ -93,10 +92,7 @@ def chat(messages: Iterable[dict[str, str]]) -> str:
 
 @observe_span("llm.acompletion", as_type="generation")
 async def achat(messages: Iterable[dict[str, str]]) -> str:
-    msgs = [
-        {"role": m["role"], "content": _strip_text(m.get("content", ""))}
-        for m in messages
-    ]
+    msgs = [{"role": m["role"], "content": _strip_text(m.get("content", ""))} for m in messages]
     metrics.incr("llm_calls_total")
     start = time.perf_counter()
     try:
@@ -115,7 +111,7 @@ async def achat(messages: Iterable[dict[str, str]]) -> str:
 # =============================================================================
 # 2. 结构化输出（Pydantic）—— 带结构适配层（经验 100036121）
 # =============================================================================
-def normalize_for_pydantic(raw: Any, expected_root_type: Type[T]) -> dict[str, Any]:
+def normalize_for_pydantic(raw: Any, expected_root_type: type[T]) -> dict[str, Any]:
     """把 LLM 可能漂移的输出收敛成 schema 期望的 dict。
 
     核心规则（来自经验 100036121）：
@@ -172,7 +168,9 @@ def normalize_for_pydantic(raw: Any, expected_root_type: Type[T]) -> dict[str, A
     return normalized
 
 
-def _build_structured_messages(messages: Iterable[dict[str, str]], output_schema: Type[T]) -> list[dict[str, str]]:
+def _build_structured_messages(
+    messages: Iterable[dict[str, str]], output_schema: type[T]
+) -> list[dict[str, str]]:
     """把 JSON Schema 拼进 system prompt，作为结构化输出的约束。"""
     schema_json = output_schema.model_json_schema()
     system_with_schema = (
@@ -184,7 +182,7 @@ def _build_structured_messages(messages: Iterable[dict[str, str]], output_schema
     return [{"role": "system", "content": system_with_schema}, *list(messages)]
 
 
-def _parse_structured(raw_text: str, output_schema: Type[T]) -> T:
+def _parse_structured(raw_text: str, output_schema: type[T]) -> T:
     """解析 LLM 文本 → dict → 归一化 → Pydantic 校验。失败抛 RuntimeError/ValidationError。"""
     parsed: Any
     try:
@@ -205,9 +203,7 @@ def _parse_structured(raw_text: str, output_schema: Type[T]) -> T:
                 raw_text[:400],
                 exc,
             )
-            raise RuntimeError(
-                f"LLM 输出非合法 JSON：{exc}。前400字={raw_text[:400]}"
-            ) from exc
+            raise RuntimeError(f"LLM 输出非合法 JSON：{exc}。前400字={raw_text[:400]}") from exc
 
     data = normalize_for_pydantic(parsed, output_schema)
     try:
@@ -221,13 +217,13 @@ def _parse_structured(raw_text: str, output_schema: Type[T]) -> T:
         raise
 
 
-def chat_structured(messages: Iterable[dict[str, str]], output_schema: Type[T]) -> T:
+def chat_structured(messages: Iterable[dict[str, str]], output_schema: type[T]) -> T:
     """结构化输出（同步）：JSON Schema 提示词 + 代码侧归一化 + Pydantic 校验。"""
     msgs = _build_structured_messages(messages, output_schema)
     return _parse_structured(chat(msgs), output_schema)
 
 
-async def achat_structured(messages: Iterable[dict[str, str]], output_schema: Type[T]) -> T:
+async def achat_structured(messages: Iterable[dict[str, str]], output_schema: type[T]) -> T:
     """结构化输出（异步）：用 acompletion，避免阻塞事件循环。"""
     msgs = _build_structured_messages(messages, output_schema)
     return _parse_structured(await achat(msgs), output_schema)
@@ -235,7 +231,7 @@ async def achat_structured(messages: Iterable[dict[str, str]], output_schema: Ty
 
 async def achat_structured_with_retry(
     messages: Iterable[dict[str, str]],
-    output_schema: Type[T],
+    output_schema: type[T],
     max_retries: int = 2,
 ) -> T:
     """带修正提示重试的结构化输出（异步）。
@@ -282,7 +278,7 @@ def is_mock_db() -> bool:
     return os.environ.get("AI_MOCK_DB", "").lower() in {"1", "true", "yes", "on"}
 
 
-def mock_structured(output_schema: Type[T], fallback: Optional[T] = None) -> T:
+def mock_structured(output_schema: type[T], fallback: T | None = None) -> T:
     if fallback is not None:
         return fallback
     defaults: dict[str, Any] = {}

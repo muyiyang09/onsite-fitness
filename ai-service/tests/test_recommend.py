@@ -9,10 +9,10 @@
     set AI_MOCK=1        # Windows PowerShell：$env:AI_MOCK=1
     python -m tests.test_recommend
 """
+
 from __future__ import annotations
 
 import asyncio
-import json
 import os
 import sys
 from pathlib import Path
@@ -31,12 +31,12 @@ os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-from rich.console import Console  # type: ignore
-from rich.panel import Panel
-from rich.table import Table
+from rich.console import Console  # type: ignore  # noqa: E402
+from rich.panel import Panel  # noqa: E402
+from rich.table import Table  # noqa: E402
 
-from app.graphs.recommend_coach import RECOMMEND_GRAPH
-from app.schemas.coach_recommend import RecommendResult
+from app.graphs.recommend_coach import RECOMMEND_GRAPH  # noqa: E402
+from app.schemas.coach_recommend import RecommendResult  # noqa: E402
 
 console = Console()
 
@@ -74,7 +74,7 @@ def main() -> int:
     console.print(
         Panel.fit(
             "[bold cyan]体育外卖 · 教练推荐 Graph 离线冒烟测试[/]\n"
-            f"AI_MOCK=1 · 运行 4 条样例 · 验证 State/Node/Edge/Pydantic 全链路",
+            "AI_MOCK=1 · 运行 4 条样例 · 验证 State/Node/Edge/Pydantic 全链路",
             title="LangGraph Smoke Test",
             border_style="cyan",
         )
@@ -103,14 +103,18 @@ def main() -> int:
         console.print()
         console.rule(f"[{mark}] {name}")
         console.print(f"[dim]Query:[/] {query}")
-        console.print(f"[dim]City :[/] {result.intent.city_name!r}   "
-                      f"[dim]Dist :[/] {result.intent.district!r}   "
-                      f"[dim]Spec :[/] {result.intent.specialization!r}   "
-                      f"[dim]MaxPrice :[/] {result.intent.max_price!r}   "
-                      f"[dim]Level :[/] {result.intent.level!r}   "
-                      f"[dim]Tags :[/] {result.intent.specialization_tags}")
+        console.print(
+            f"[dim]City :[/] {result.intent.city_name!r}   "
+            f"[dim]Dist :[/] {result.intent.district!r}   "
+            f"[dim]Spec :[/] {result.intent.specialization!r}   "
+            f"[dim]MaxPrice :[/] {result.intent.max_price!r}   "
+            f"[dim]Level :[/] {result.intent.level!r}   "
+            f"[dim]Tags :[/] {result.intent.specialization_tags}"
+        )
 
-        tbl = Table("Rank", "Coach", "Level", "Rating", "Price", "Match", "Total", header_style="bold")
+        tbl = Table(
+            "Rank", "Coach", "Level", "Rating", "Price", "Match", "Total", header_style="bold"
+        )
         for i, c in enumerate(result.candidates, 1):
             lv = ["初级", "中级", "高级", "金牌"][c.level - 1]
             tbl.add_row(

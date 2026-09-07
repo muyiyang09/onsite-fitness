@@ -15,9 +15,9 @@ review_summary / cert_review / chat），本文件只保留组装与横切关注
     cp .env.example .env            # 填 LLM_API_KEY（不填也能跑 mock）
     python -m app.main              # 或：uvicorn app.main:app --host 0.0.0.0 --port 18000
 """
+
 from __future__ import annotations
 
-import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -48,7 +48,10 @@ async def lifespan(app: FastAPI):
     setup_logging(logging.INFO if settings.service_env != "dev" else logging.DEBUG)
     logger.info(
         "AI 服务启动：env=%s port=%s LLM=%s mock_mode=%s",
-        settings.service_env, settings.service_port, settings.llm_model, is_mock_mode(),
+        settings.service_env,
+        settings.service_port,
+        settings.llm_model,
+        is_mock_mode(),
     )
 
     # Langfuse 可观测性（#13，可选）：未启用/未装包/初始化失败一律降级为纯日志 trace（fail-open）
@@ -59,6 +62,7 @@ async def lifespan(app: FastAPI):
     if settings.checkpointer_backend == "redis" and settings.checkpoint_db_fallback:
         try:
             from app.core import session_store
+
             await session_store.ensure_table()
             logger.info("[SessionStore] ai_session_state 表已就绪（DB 灾备层激活）")
         except Exception as exc:  # noqa: BLE001
@@ -82,6 +86,7 @@ app = FastAPI(
     version="0.2.0",
     lifespan=lifespan,
 )
+
 
 # CORS 来源（§6.31）：从 env ALLOWED_ORIGINS 解析；credentials=True 时禁止 "*"。
 def _cors_origins() -> list[str]:
@@ -128,7 +133,11 @@ async def unhandled_error_handler(request: Request, exc: Exception) -> JSONRespo
     logger.exception("未预期异常：%s", exc)
     return JSONResponse(
         status_code=500,
-        content={"code": "AI_INTERNAL", "msg": "AI 服务内部错误", "request_id": request_id_var.get()},
+        content={
+            "code": "AI_INTERNAL",
+            "msg": "AI 服务内部错误",
+            "request_id": request_id_var.get(),
+        },
     )
 
 

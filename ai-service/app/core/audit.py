@@ -10,6 +10,7 @@
   - prompt/response 截断到 1000 字符，避免日志表被长 prompt 撑爆；
   - 依赖 `sql/ai_audit_log.sql` 先建表；表未建时写失败会告警（生产前必须建）。
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -39,7 +40,7 @@ async def log_audit(
     *,
     user_id: str,
     request_id: str,
-    action: str,                 # "llm_call" / "tool_call" / "graph_invoke"
+    action: str,  # "llm_call" / "tool_call" / "graph_invoke"
     model: str | None = None,
     prompt: str | None = None,
     response: str | None = None,
@@ -74,7 +75,9 @@ async def log_audit(
     try:
         await aexecute(sql, params)
     except Exception as exc:  # noqa: BLE001
-        logger.warning("审计日志写入失败（不影响主流程，生产前需执行 sql/ai_audit_log.sql）：%s", exc)
+        logger.warning(
+            "审计日志写入失败（不影响主流程，生产前需执行 sql/ai_audit_log.sql）：%s", exc
+        )
 
 
 __all__ = ["log_audit", "spawn_audit"]

@@ -4,6 +4,7 @@
     cd ai-service
     ./.venv/Scripts/python.exe -m pytest tests/test_checkpoint.py -q
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -22,6 +23,7 @@ from app.core.checkpoint_redis_db import RedisDBCheckpointer  # noqa: E402
 def _async_return(value):
     async def _fn(*args, **kwargs):
         return value
+
     return _fn
 
 
@@ -30,11 +32,13 @@ def _async_return(value):
 # ---------------------------------------------------------------------------
 def test_build_checkpointer_memory_default():
     from langgraph.checkpoint.memory import MemorySaver
+
     assert isinstance(build_checkpointer(), MemorySaver)
 
 
 def test_build_checkpointer_redis_no_db_fallback(monkeypatch):
     from langgraph.checkpoint.redis import AsyncRedisSaver
+
     monkeypatch.setattr(settings, "checkpointer_backend", "redis")
     monkeypatch.setattr(settings, "checkpoint_db_fallback", False)
     assert isinstance(build_checkpointer(), AsyncRedisSaver)
@@ -100,7 +104,6 @@ def test_redis_db_checkpointer_db_miss_empty_cache(monkeypatch):
 def test_redis_db_checkpointer_aput_dual_write(monkeypatch):
     import app.core.session_store as ss
 
-    put_calls = []
     monkeypatch.setattr(ss, "put_state", _async_return(None))
 
     inner = _FakeInner(hit=None)

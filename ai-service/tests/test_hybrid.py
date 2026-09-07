@@ -7,6 +7,7 @@
     cd ai-service
     ./.venv/Scripts/python.exe -m pytest tests/test_hybrid.py -q
 """
+
 from __future__ import annotations
 
 import os
@@ -33,15 +34,15 @@ def test_rrf_fuse_rewards_multi_list_hit():
     fused = _rrf_fuse(
         [
             [(1, 10.0), (2, 9.0), (3, 8.0)],  # BM25 路
-            [(2, 0.9)],                        # 向量路：只命中 coach 2
+            [(2, 0.9)],  # 向量路：只命中 coach 2
         ],
         k=60,
         top_k=30,
     )
     ids = [cid for cid, _ in fused]
-    assert ids[0] == 2      # 双路命中 → 第一
-    assert ids[1] == 1      # 单路 rank1 → 第二
-    assert ids[2] == 3      # 单路 rank3 → 第三
+    assert ids[0] == 2  # 双路命中 → 第一
+    assert ids[1] == 1  # 单路 rank1 → 第二
+    assert ids[2] == 3  # 单路 rank3 → 第三
 
 
 def test_rrf_fuse_top_k_cutoff():
@@ -69,7 +70,12 @@ def test_rank_to_relevance_empty():
 # ---------------------------------------------------------------------------
 def test_hybrid_disabled_returns_empty(monkeypatch):
     monkeypatch.setattr(settings, "hybrid_retrieval_enabled", False)
-    assert hybrid_match_scores("减脂", [{"coach_id": 1, "name": "李", "bio": "减脂", "city_name": "北京"}]) == {}
+    assert (
+        hybrid_match_scores(
+            "减脂", [{"coach_id": 1, "name": "李", "bio": "减脂", "city_name": "北京"}]
+        )
+        == {}
+    )
 
 
 def test_hybrid_empty_query_returns_empty():
@@ -78,8 +84,11 @@ def test_hybrid_empty_query_returns_empty():
 
 def test_hybrid_graceful_when_no_index():
     """mock 模式下 MySQL 不可用，BM25 索引为空，应返回 {} 而非抛异常。"""
-    result = hybrid_match_scores("减脂塑形", [
-        {"coach_id": 1, "name": "李教练", "bio": "专注减脂", "city_name": "北京市"},
-        {"coach_id": 2, "name": "王教练", "bio": "擅长增肌", "city_name": "北京市"},
-    ])
+    result = hybrid_match_scores(
+        "减脂塑形",
+        [
+            {"coach_id": 1, "name": "李教练", "bio": "专注减脂", "city_name": "北京市"},
+            {"coach_id": 2, "name": "王教练", "bio": "擅长增肌", "city_name": "北京市"},
+        ],
+    )
     assert result == {}

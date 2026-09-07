@@ -9,6 +9,7 @@
 §6.29：route_query 的 LLM 调用包熔断（llm_breaker）——连续失败超过阈值后快速失败，
 降级到关键词规则路由（再兜底 recommend_coach），避免每次请求都傻等 LLM 超时。
 """
+
 from __future__ import annotations
 
 import logging
@@ -37,11 +38,15 @@ async def route_query(user_query: str) -> str:
         return _route_by_keyword(user_query)
 
     from app.prompts.loader import load_prompt
+
     try:
-        text = await llm_breaker.call(achat, [
-            {"role": "system", "content": load_prompt("supervisor_route")},
-            {"role": "user", "content": user_query},
-        ])
+        text = await llm_breaker.call(
+            achat,
+            [
+                {"role": "system", "content": load_prompt("supervisor_route")},
+                {"role": "user", "content": user_query},
+            ],
+        )
         text = (text or "").strip().lower()
         for agent in _AGENTS:
             if agent in text:

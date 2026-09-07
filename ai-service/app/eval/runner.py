@@ -10,6 +10,7 @@
 基线（baseline）思维：Eval 不是「断言全过」，而是记一个分数，改 prompt/模型后对比——
 分数涨了 = 改对了。通过阈值：intent_acc≥0.6 且 topk_hit≥1.0 且 reason_score≥60。
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -43,8 +44,9 @@ async def run_eval(dataset_path: str) -> dict:
             )
             result = RecommendResult.model_validate(state_out["result"])
         except Exception as exc:  # noqa: BLE001
-            results.append({"id": case["id"], "name": case["name"],
-                            "error": str(exc), "pass": False})
+            results.append(
+                {"id": case["id"], "name": case["name"], "error": str(exc), "pass": False}
+            )
             continue
 
         intent_acc = intent_field_accuracy(
@@ -55,18 +57,24 @@ async def run_eval(dataset_path: str) -> dict:
             result.recommend_reason, [c.model_dump() for c in result.candidates]
         )
         passed = intent_acc >= _INTENT_MIN and hit >= 1.0 and rq["score"] >= _REASON_MIN
-        results.append({
-            "id": case["id"], "name": case["name"],
-            "intent_acc": intent_acc, "topk_hit": hit,
-            "reason_score": rq["score"], "pass": passed,
-        })
+        results.append(
+            {
+                "id": case["id"],
+                "name": case["name"],
+                "intent_acc": intent_acc,
+                "topk_hit": hit,
+                "reason_score": rq["score"],
+                "pass": passed,
+            }
+        )
 
     total = len(results)
     passed = sum(1 for r in results if r.get("pass"))
     avg_intent = sum(r.get("intent_acc", 0) for r in results) / total if total else 0.0
     avg_reason = sum(r.get("reason_score", 0) for r in results) / total if total else 0.0
     return {
-        "passed": passed, "total": total,
+        "passed": passed,
+        "total": total,
         "pass_rate": passed / total if total else 0.0,
         "avg_intent_acc": avg_intent,
         "avg_reason_score": avg_reason,
@@ -78,9 +86,12 @@ def print_report(report: dict) -> None:
     tbl = Table("ID", "Name", "Intent", "TopK", "Reason", "Pass", title="教练推荐 Eval 报告")
     for r in report["details"]:
         tbl.add_row(
-            str(r.get("id", "-")), r.get("name", "-"),
-            f"{r.get('intent_acc', 0):.2f}", f"{r.get('topk_hit', 0):.0f}",
-            f"{r.get('reason_score', 0):.0f}", "✓" if r.get("pass") else "✗",
+            str(r.get("id", "-")),
+            r.get("name", "-"),
+            f"{r.get('intent_acc', 0):.2f}",
+            f"{r.get('topk_hit', 0):.0f}",
+            f"{r.get('reason_score', 0):.0f}",
+            "✓" if r.get("pass") else "✗",
         )
     console.print(tbl)
     console.print(

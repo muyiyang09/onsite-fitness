@@ -12,6 +12,7 @@ LLM 成本是变量，恶意用户/被劫持账号能瞬间烧光预算。三级
   - 本函数在**端点内**调用（已有 Pydantic 解析好的 body），不做成中间件——因为读 body
     的中间件在 Starlette 里要缓存 body、实现别扭，端点里直接拿 payload 更干净。
 """
+
 from __future__ import annotations
 
 import logging

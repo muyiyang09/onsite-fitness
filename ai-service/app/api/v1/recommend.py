@@ -1,9 +1,9 @@
 """教练推荐 + 用户反馈回流路由。"""
+
 from __future__ import annotations
 
 import logging
 import time
-from typing import Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Header, Request
@@ -35,9 +35,12 @@ router = APIRouter(prefix="/v1/ai", tags=["AI"])
 
 class RecommendCoachIn(BaseModel):
     user_query: str = Field(
-        ..., min_length=1, max_length=500, description="用户自然语言，如 '望京 预算200 产后恢复 周末'"
+        ...,
+        min_length=1,
+        max_length=500,
+        description="用户自然语言，如 '望京 预算200 产后恢复 周末'",
     )
-    city_code_override: Optional[str] = Field(
+    city_code_override: str | None = Field(
         default=None, description="可选：小程序端已知用户城市时，强制覆盖 LLM 抽取结果"
     )
     top_n: int = Field(default=3, ge=1, le=5, description="返回教练数量（1~5）")
@@ -48,8 +51,8 @@ class FeedbackIn(BaseModel):
 
     request_id: str = Field(..., description="对应推荐请求的 request_id（关联审计/日志）")
     action: str = Field(..., description="用户行为：like / dislike / order")
-    coach_id: Optional[int] = Field(default=None, description="被点击/下单的教练 ID")
-    feedback: Optional[str] = Field(default=None, description="补充文字反馈")
+    coach_id: int | None = Field(default=None, description="被点击/下单的教练 ID")
+    feedback: str | None = Field(default=None, description="补充文字反馈")
 
 
 @router.post(
@@ -61,7 +64,7 @@ class FeedbackIn(BaseModel):
 async def recommend_coach(
     payload: RecommendCoachIn,
     request: Request,
-    x_user_id: Optional[str] = Header(default=None),
+    x_user_id: str | None = Header(default=None),
 ) -> RecommendResult:
     user_id = x_user_id or "anon"
     request_id = request_id_var.get()
@@ -79,7 +82,7 @@ async def recommend_coach(
 
     # 2. 结果缓存（相同 query 24h 复用，跳过 LLM）+ 击穿防护（singleflight）
     cache_key = make_cache_key(query, payload.top_n, payload.city_code_override)
-    build_lock_token: Optional[str] = None
+    build_lock_token: str | None = None
     if settings.cache_enabled:
         cached = await get_cache(cache_key)
         if cached:
@@ -162,13 +165,16 @@ async def feedback(payload: FeedbackIn, request: Request) -> dict[str, bool]:
         "VALUES (:request_id, :user_id, :action, :coach_id, :feedback, NOW())"
     )
     try:
-        await aexecute(sql, {
-            "request_id": payload.request_id,
-            "user_id": user_id,
-            "action": payload.action,
-            "coach_id": payload.coach_id,
-            "feedback": payload.feedback,
-        })
+        await aexecute(
+            sql,
+            {
+                "request_id": payload.request_id,
+                "user_id": user_id,
+                "action": payload.action,
+                "coach_id": payload.coach_id,
+                "feedback": payload.feedback,
+            },
+        )
     except Exception as exc:  # noqa: BLE001
         logger.warning("反馈写入失败（不影响主流程，生产前需执行 sql/ai_eval_online.sql）：%s", exc)
     return {"ok": True}

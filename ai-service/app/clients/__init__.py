@@ -3,6 +3,7 @@
 当前只有一个 LLM 客户端，统一从 `app.clients.llm` re-export，
 保证「单一来源」，避免在 __init__.py 里再维护一份会漂移的副本。
 """
+
 from app.clients.llm import (  # noqa: F401
     achat,
     chat,

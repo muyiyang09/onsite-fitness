@@ -5,6 +5,7 @@
     cd ai-service
     ./.venv/Scripts/python.exe -m pytest tests/test_loop.py -q
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -42,9 +43,7 @@ def test_reason_quality_too_long():
 
 
 def test_reason_quality_no_coach_name():
-    assert (
-        _reason_quality_issue("这位教练很专业，快下单吧", [{"name": "李教练"}]) is not None
-    )
+    assert _reason_quality_issue("这位教练很专业，快下单吧", [{"name": "李教练"}]) is not None
 
 
 def test_reason_quality_ok():
@@ -79,7 +78,7 @@ def test_relax_first_round_clears_sex_and_rating():
     assert out["refine_count"] == 1
     assert out["intent"]["male_only"] is None
     assert out["intent"]["min_rating"] is None
-    assert out["intent"]["level"] == 4          # 还没放
+    assert out["intent"]["level"] == 4  # 还没放
     assert out["intent"]["city_name"] == "北京市"
 
 
