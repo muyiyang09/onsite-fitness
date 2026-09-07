@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @Slf4j
 @EnableCaching //开启缓存
 @EnableScheduling //开启定时任务（派单池超时兜底）
+@EnableAsync //开启异步（评价摘要、AI 调用等降级异步刷新）
 public class SkyApplication {
     public static void main(String[] args) {
         // §13.7：裸启动（无显式 --spring.profiles.active）时若回退到 dev 配置，

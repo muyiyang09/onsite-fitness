@@ -623,7 +623,13 @@ public class OrderServiceImpl implements OrderService {
                 .updateTime(LocalDateTime.now())
                 .build();
         orderMapper.update(orders);
-        // TODO 评价由 task28 做
+        // 评价由用户端触发：服务完成后订单进入 COMPLETED(5)，
+        // 用户在小程序提交评价（/user/order/review POST）时：
+        //   1. 单评校验 + 写 order_review 表
+        //   2. 订单状态 COMPLETED(5) -> REVIEWED(10)
+        //   3. 回填 coach.rating（SQL avg 四舍五入 1 位）
+        //   4. 异步刷新 AI 评价摘要（失败降级，不阻塞评价提交）
+        // 具体实现见 OrderReviewServiceImpl.submit()。
     }
 
     /**

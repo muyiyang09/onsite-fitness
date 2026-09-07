@@ -31,10 +31,11 @@ public class Orders implements Serializable {
     public static final Integer REJECTED = 7;
 
     /**
-     * 订单状态 8退款中 9已退款
+     * 订单状态 8退款中 9已退款 10已评价
      */
     public static final Integer REFUNDING = 8;
     public static final Integer REFUNDED = 9;
+    public static final Integer REVIEWED = 10;
 
     /**
      * 下单模式 1指定教练 2派单池

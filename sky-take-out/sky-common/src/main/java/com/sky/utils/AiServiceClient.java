@@ -54,6 +54,27 @@ public class AiServiceClient {
     }
 
     /**
+     * 评价摘要（教练最近 N 条评价 → 优缺点 + 标签 + 情感计数）。
+     * <p>对齐 ai-service {@code /v1/ai/review-summary} 契约：
+     * <pre>{@code
+     *   Request:  { coach_id: int, limit: int(1~200) }
+     *   Response: { coach_id, summary, positive_tags[], negative_tags[], sentiment{pos/neg/neu}, used_mock }
+     * }</pre>
+     *
+     * @param coachId 教练 ID
+     * @param limit   取最近评价条数（1~200，默认 30）
+     * @return ai-service 返回的 ReviewSummaryResult JSON 字符串；异常时 ai-service 层已有日志，调用方自行 try/catch
+     */
+    public String reviewSummary(int coachId, int limit) {
+        int safeLimit = Math.min(Math.max(limit, 1), 200);
+        // HashMap 支持 null 值，避免 Map.of 对 int 自动装箱的空安全问题
+        Map<String, Object> body = new HashMap<>();
+        body.put("coach_id", coachId);
+        body.put("limit", safeLimit);
+        return postJson("/v1/ai/review-summary", body);
+    }
+
+    /**
      * 内部统一 POST JSON + X-Service-Token 头。
      */
     private String postJson(String path, Map<String, Object> body) {

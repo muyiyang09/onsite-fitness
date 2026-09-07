@@ -220,7 +220,7 @@ CREATE TABLE dispatch_pool (
 CREATE TABLE orders (
     id                 BIGINT        NOT NULL AUTO_INCREMENT COMMENT '主键',
     order_number       VARCHAR(64)   DEFAULT NULL COMMENT '订单号',
-    status             TINYINT       DEFAULT 1 COMMENT '状态 1待付款 2待接单 3待服务 4服务中 5已完成 6已取消 7拒单',
+    status             TINYINT       DEFAULT 1 COMMENT '状态 1待付款 2待接单 3待服务 4服务中 5已完成 6已取消 7拒单 8退款中 9已退款 10已评价',
     user_id            BIGINT        NOT NULL COMMENT '下单用户id',
     coach_id           BIGINT        DEFAULT NULL COMMENT '教练id（指定单下单填/派单成功后回填）',
     address_book_id    BIGINT        DEFAULT NULL COMMENT '上门地址id',
