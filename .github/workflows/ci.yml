@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: sky-take-out
+        working-directory: platform-backend
     steps:
       - uses: actions/checkout@v4
 

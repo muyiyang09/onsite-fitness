@@ -1,7 +1,7 @@
 [project]
-name = "sports-takeout-ai"
+name = "onsite-fitness-ai"
 version = "0.1.0"
-description = "体育外卖 · AI 微服务：教练智能推荐 / 评价摘要 / 证书审核（LangGraph + LiteLLM + Pydantic）"
+description = "上门体育 · AI 微服务：教练智能推荐 / 评价摘要 / 证书审核（LangGraph + LiteLLM + Pydantic）"
 requires-python = ">=3.11"
 dependencies = [
     # —— 核心框架：版本严格锁定，避免漂移（参考经验 1674242 / 100007543）——
@@ -17,7 +17,7 @@ dependencies = [
     "fastapi==0.115.6",
     "uvicorn[standard]==0.32.1",
     "httpx==0.27.2",             # HTTP 调现有 Spring Boot（如果需要远程查教练库）
-    # —— 数据库：只读现有 sports_takeout MySQL ——
+    # —— 数据库：只读现有 onsite_fitness MySQL ——
     "sqlalchemy==2.0.36",
     "pymysql==1.1.1",
     # —— Redis：缓存 / 限流 / Token 预算 / Checkpointer（生产）——

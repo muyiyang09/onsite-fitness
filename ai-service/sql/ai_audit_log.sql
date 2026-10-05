@@ -1,6 +1,6 @@
 -- ai-service 审计日志表（#05 商业化加固 · 合规/成本溯源）
 -- 用途：记录所有 LLM / 工具调用，用于合规审计 + token 成本回溯 + 问题定位。
--- 执行：在 sports_takeout 库下执行本文件即可（表不存在时 ai-service 会告警，不影响主流程）。
+-- 执行：在 onsite_fitness 库下执行本文件即可（表不存在时 ai-service 会告警，不影响主流程）。
 
 CREATE TABLE IF NOT EXISTS `ai_audit_log` (
     `id`            VARCHAR(36)  NOT NULL COMMENT 'UUID 主键',

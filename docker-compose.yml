@@ -1,6 +1,6 @@
 version: '3.8'
 
-# 体育外卖 · 上门私教平台 — 一键部署
+# 上门体育 · 上门私教平台 — 一键部署
 # 使用方法：
 #   1. 复制 .env.example 为 .env 并填写配置
 #   2. docker-compose up -d
@@ -12,7 +12,7 @@ services:
     container_name: sports-mysql
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?required}
-      MYSQL_DATABASE: sports_takeout
+      MYSQL_DATABASE: onsite_fitness
       MYSQL_USER: ${MYSQL_APP_USER:-sports_app}
       MYSQL_PASSWORD: ${MYSQL_APP_PASSWORD:?required}
       TZ: Asia/Shanghai
@@ -20,7 +20,7 @@ services:
       - "127.0.0.1:3306:3306"   # 仅本机调试，不对外暴露（§6.17）
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./sql/sports_take_out.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./sql/onsite_fitness.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./ai-service/sql/ai_audit_log.sql:/docker-entrypoint-initdb.d/02-ai-audit.sql:ro
       - ./ai-service/sql/ai_eval_online.sql:/docker-entrypoint-initdb.d/03-ai-eval-online.sql:ro
       - ./ai-service/sql/ai_session_state.sql:/docker-entrypoint-initdb.d/04-ai-session-state.sql:ro
@@ -52,7 +52,7 @@ services:
 
   backend:
     build:
-      context: ./sky-take-out
+      context: ./platform-backend
       dockerfile: Dockerfile
     container_name: sports-backend
     depends_on:
@@ -62,17 +62,17 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SKY_DATASOURCE_HOST: mysql
-      SKY_DATASOURCE_PORT: 3306
-      SKY_DATASOURCE_DATABASE: sports_takeout
-      SKY_DATASOURCE_USERNAME: ${MYSQL_APP_USER:-sports_app}
-      SKY_DATASOURCE_PASSWORD: ${MYSQL_APP_PASSWORD:?required}
-      SKY_REDIS_HOST: redis
-      SKY_REDIS_PORT: 6379
-      SKY_REDIS_PASSWORD: ${REDIS_PASSWORD:?required}
+      ONSITE_DATASOURCE_HOST: mysql
+      ONSITE_DATASOURCE_PORT: 3306
+      ONSITE_DATASOURCE_DATABASE: onsite_fitness
+      ONSITE_DATASOURCE_USERNAME: ${MYSQL_APP_USER:-sports_app}
+      ONSITE_DATASOURCE_PASSWORD: ${MYSQL_APP_PASSWORD:?required}
+      ONSITE_REDIS_HOST: redis
+      ONSITE_REDIS_PORT: 6379
+      ONSITE_REDIS_PASSWORD: ${REDIS_PASSWORD:?required}
       TZ: Asia/Shanghai
-      SKY_AI_BASE_URL: http://ai-service:18000     # 后端 → ai-service 容器间调用
-      SKY_AI_SERVICE_TOKEN: ${SERVICE_AUTH_TOKEN:-} # 与 ai-service 同一共享密钥（后端侧变量名）
+      ONSITE_AI_BASE_URL: http://ai-service:18000     # 后端 → ai-service 容器间调用
+      ONSITE_AI_SERVICE_TOKEN: ${SERVICE_AUTH_TOKEN:-} # 与 ai-service 同一共享密钥（后端侧变量名）
     ports:
       - "8080:8080"
     stop_grace_period: 35s      # 配合 graceful shutdown，30s 内处理完存量请求再退（§6.12）
@@ -90,7 +90,7 @@ services:
       - "5173:80"
     restart: unless-stopped
 
-  # AI 微服务：旁挂 Spring Boot 主后端的独立 AI 服务，只读 sports_takeout 库
+  # AI 微服务：旁挂 Spring Boot 主后端的独立 AI 服务，只读 onsite_fitness 库
   ai-service:
     build:
       context: ./ai-service
@@ -109,7 +109,7 @@ services:
       LLM_BASE_URL: ${LLM_BASE_URL:-}
       MYSQL_HOST: mysql
       MYSQL_PORT: 3306
-      MYSQL_DATABASE: sports_takeout
+      MYSQL_DATABASE: onsite_fitness
       MYSQL_USER: ${MYSQL_APP_USER:-sports_app}
       MYSQL_PASSWORD: ${MYSQL_APP_PASSWORD:?required}
       REDIS_HOST: redis

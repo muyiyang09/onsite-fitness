@@ -2823,7 +2823,7 @@ wheels = [
 ]
 
 [[package]]
-name = "sports-takeout-ai"
+name = "onsite-fitness-ai"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

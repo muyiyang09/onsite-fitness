@@ -13,5 +13,5 @@ ALTER TABLE dispatch_pool ADD UNIQUE INDEX uk_dispatch_order_id (order_id);
 
 -- 4. 应用账号权限收紧（§6.17）：MySQL docker 镜像已通过 MYSQL_USER 创建 sports_app
 --    此处补充 GRANT 确保权限正确（若已由镜像自动授权则幂等）
-GRANT SELECT, INSERT, UPDATE, DELETE ON sports_takeout.* TO 'sports_app'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE ON onsite_fitness.* TO 'sports_app'@'%';
 FLUSH PRIVILEGES;

@@ -1,0 +1,40 @@
+onsite:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    host: localhost
+    port: 3306
+    database: onsite_fitness
+    username: root
+    password: 123456
+  # ⚠️ 仅开发：以下 JWT/AES 为可被 git 追踪的弱默认，生产禁用（生产用 .env 注入 ONSITE_JWT_* / ONSITE_AES_KEY）
+  jwt:
+    admin-secret-key: dc3f6fb16b4fe31ff1e0910f67be2b108de44cd4ea55b76775d5a7b72ebe5409
+    user-secret-key: 89bac629749f27df08330116c1b562f64835be18528cb708f4a9c3bd7b99c62a
+    coach-secret-key: 2ccc1f422dccd7882cd6512a6d9dc7d6b1ec4f7f626715cb803d702409fb2f9c
+  encrypt:
+    aes-key: OnsiteFitnessKey
+  # 以下第三方密钥均为占位符，请替换为你自己的值，切勿提交真实密钥到仓库
+  alioss:
+    access-key-id: your-aliyun-access-key-id
+    access-key-secret: your-aliyun-access-key-secret
+    endpoint: oss-cn-beijing.aliyuncs.com
+    bucket-name: your-oss-bucket
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    password:
+    database: 0
+  wechat:
+    appid: your-wx-appid
+    secret: your-wx-secret
+    mchid: your-wx-mchid
+    mchSerialNo: your-wx-mch-serial-no
+    privateKeyFilePath: /path/to/apiclient_key.pem
+    apiV3Key: your-wx-api-v3-key
+    weChatPayCertFilePath: /path/to/wechatpay.pem
+    notifyUrl: http://localhost:8080/notify/paySuccess
+    refundNotifyUrl: http://localhost:8080/notify/refundSuccess
+  shop:
+    address: 北京市朝阳区北苑东路11号院
+  baidu:
+    ak: your-baidu-ak

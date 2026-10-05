@@ -177,7 +177,7 @@ from mcp.server.streamable_http import StreamableHTTPServer
 from mcp.types import Tool, TextContent
 import json
 
-app = Server("sports-takeout-ai-tools")
+app = Server("onsite-fitness-ai-tools")
 
 
 @app.list_tools()
@@ -370,7 +370,7 @@ async def retrieve_and_rank(state: RecommendState) -> dict[str, Any]:
 让 Python Agent 能调 Java 工具（如下单、派单等）。
 
 ```java
-// sky-take-out/sky-server/.../mcp/McpServerController.java（新增）
+// platform-backend/backend-server/.../mcp/McpServerController.java（新增）
 @RestController
 @RequestMapping("/mcp")
 public class McpServerController {
@@ -500,7 +500,7 @@ MCP_TIMEOUT=30
 | 5 | `app/mcp/client.py` | 新建 MCP Client（含多 server 路由） |
 | 6 | `app/graphs/recommend_coach.py` | 节点改走 mcp_call |
 | 7 | `app/main.py` | 启动时同时起 MCP Server（同一进程或子进程） |
-| 8 | `sky-take-out/.../mcp/McpServerController.java` | Java 端 MCP Server |
+| 8 | `platform-backend/.../mcp/McpServerController.java` | Java 端 MCP Server |
 | 9 | `docker-compose.yml` | 暴露 MCP 端口 |
 | 10 | 测试：用 Claude Desktop 连本地 MCP Server 验证 |
 

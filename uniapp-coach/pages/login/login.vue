@@ -2,7 +2,7 @@
     <view class="page">
         <view class="logo">
             <view class="logo-icon">🏋️</view>
-            <text class="logo-title">体育外卖 · 教练端</text>
+            <text class="logo-title">上门体育 · 教练端</text>
             <text class="logo-sub">上门私教，接单赚钱</text>
         </view>
 

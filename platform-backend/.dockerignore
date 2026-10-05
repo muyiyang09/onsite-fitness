@@ -1,0 +1,10 @@
+# platform-backend Docker build context 过滤（§19.4）
+.git
+.gitignore
+*.md
+docs/
+**/target/
+**/.idea/
+**/*.iml
+**/src/test/
+sql/

@@ -1,0 +1,42 @@
+onsite:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    host: ${ONSITE_DATASOURCE_HOST:mysql}
+    port: ${ONSITE_DATASOURCE_PORT:3306}
+    database: ${ONSITE_DATASOURCE_DATABASE:onsite_fitness}
+    username: ${ONSITE_DATASOURCE_USERNAME:root}
+    password: ${ONSITE_DATASOURCE_PASSWORD:123456}
+  # JWT/AES 密钥：生产必须通过 .env 注入，缺失即启动失败（§6.14）
+  jwt:
+    admin-secret-key: ${ONSITE_JWT_ADMIN_KEY:}
+    user-secret-key: ${ONSITE_JWT_USER_KEY:}
+    coach-secret-key: ${ONSITE_JWT_COACH_KEY:}
+  encrypt:
+    aes-key: ${ONSITE_AES_KEY:}
+  alioss:
+    access-key-id: ${ONSITE_OSS_AK:}
+    access-key-secret: ${ONSITE_OSS_SK:}
+    endpoint: ${ONSITE_OSS_ENDPOINT:oss-cn-beijing.aliyuncs.com}
+    bucket-name: ${ONSITE_OSS_BUCKET:}
+  redis:
+    host: ${ONSITE_REDIS_HOST:redis}
+    port: ${ONSITE_REDIS_PORT:6379}
+    password: ${ONSITE_REDIS_PASSWORD:}
+    database: 0
+  wechat:
+    appid: ${ONSITE_WX_APPID:}
+    secret: ${ONSITE_WX_SECRET:}
+    mchid: ${ONSITE_WX_MCHID:}
+    mchSerialNo: ${ONSITE_WX_MCH_SERIAL:}
+    privateKeyFilePath: ${ONSITE_WX_PRIVATE_KEY_PATH:/app/pay/apiclient_key.pem}
+    apiV3Key: ${ONSITE_WX_API_V3_KEY:}
+    weChatPayCertFilePath: ${ONSITE_WX_PAY_CERT_PATH:/app/pay/wechatpay.pem}
+    notifyUrl: ${ONSITE_WX_NOTIFY_URL:http://localhost:8080/notify/paySuccess}
+    refundNotifyUrl: ${ONSITE_WX_REFUND_NOTIFY_URL:http://localhost:8080/notify/refundSuccess}
+  shop:
+    address: ${ONSITE_SHOP_ADDRESS:北京市朝阳区北苑东路11号院}
+  baidu:
+    ak: ${ONSITE_BAIDU_AK:}
+  ai:
+    base-url: ${ONSITE_AI_BASE_URL:http://ai-service:18000}
+    service-token: ${ONSITE_AI_SERVICE_TOKEN:}

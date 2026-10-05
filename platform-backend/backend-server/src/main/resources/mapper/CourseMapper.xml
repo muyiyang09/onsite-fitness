@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.onsitefitness.mapper.CourseMapper">
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into course (name, category_id, price, image, description, status, intensity, duration_min, suit_crowd, equipment, create_time, update_time, create_user, update_user)
+        values (#{name}, #{categoryId}, #{price}, #{image}, #{description}, #{status}, #{intensity}, #{durationMin}, #{suitCrowd}, #{equipment}, #{createTime}, #{updateTime}, #{createUser}, #{updateUser})
+    </insert>
+
+    <update id="update">
+        update course
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            <if test="price != null">price = #{price},</if>
+            <if test="image != null">image = #{image},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="intensity != null">intensity = #{intensity},</if>
+            <if test="durationMin != null">duration_min = #{durationMin},</if>
+            <if test="suitCrowd != null">suit_crowd = #{suitCrowd},</if>
+            <if test="equipment != null">equipment = #{equipment},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="updateUser != null">update_user = #{updateUser},</if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteByIds">
+        delete from course where id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="pageQuery" resultType="com.onsitefitness.vo.CourseVO">
+        select c.*, ca.name as category_name
+        from course c
+        left outer join category ca on c.category_id = ca.id
+        <where>
+            <if test="categoryId != null">
+                and c.category_id = #{categoryId}
+            </if>
+            <if test="name != null">
+                and c.name like concat('%', #{name}, '%')
+            </if>
+        </where>
+        order by c.create_time desc
+    </select>
+
+    <select id="list" resultType="com.onsitefitness.vo.CourseVO">
+        select c.*, ca.name as category_name
+        from course c
+        left outer join category ca on c.category_id = ca.id
+        <where>
+            <if test="name != null">
+                and c.name like concat('%',#{name},'%')
+            </if>
+            <if test="categoryId != null">
+                and c.category_id = #{categoryId}
+            </if>
+            <if test="status != null">
+                and c.status = #{status}
+            </if>
+        </where>
+        order by c.create_time desc
+    </select>
+
+    <select id="countByMap" resultType="java.lang.Integer">
+        select count(id) from course
+        <where>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+            <if test="categoryId != null">
+                and category_id = #{categoryId}
+            </if>
+        </where>
+    </select>
+</mapper>

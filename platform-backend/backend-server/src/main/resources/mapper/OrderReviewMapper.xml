@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.onsitefitness.mapper.OrderReviewMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into order_review (order_id, user_id, coach_id, course_id, coach_rating, course_rating,
+                                  content, images, create_time)
+        values (#{orderId}, #{userId}, #{coachId}, #{courseId}, #{coachRating}, #{courseRating},
+                #{content}, #{images}, #{createTime})
+    </insert>
+
+    <select id="getByOrderId" resultType="com.onsitefitness.vo.OrderReviewVO">
+        select r.*, c.name as course_name, co.name as coach_name
+        from order_review r
+        left join course c on r.course_id = c.id
+        left join coach co on r.coach_id = co.id
+        where r.order_id = #{orderId}
+    </select>
+
+    <select id="pageQueryByCoach" resultType="com.onsitefitness.vo.OrderReviewVO">
+        select r.*, c.name as course_name, co.name as coach_name
+        from order_review r
+        left join course c on r.course_id = c.id
+        left join coach co on r.coach_id = co.id
+        <where>
+            <if test="coachId != null">
+                and r.coach_id = #{coachId}
+            </if>
+        </where>
+        order by r.create_time desc
+    </select>
+
+    <update id="updateCoachRating">
+        update coach set rating =
+            (select round(avg(coach_rating), 1) from order_review where coach_id = #{coachId})
+        where id = #{coachId}
+    </update>
+
+</mapper>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.onsitefitness.mapper.PackageCourseMapper">
+    <insert id="insertBatch" parameterType="list">
+        insert into package_course
+        (package_id, course_id, course_num, create_time, update_time)
+        values
+        <foreach collection="packageCourses" item="pc" separator=",">
+            (#{pc.packageId},#{pc.courseId},#{pc.courseNum},NOW(),NOW())
+        </foreach>
+    </insert>
+
+    <select id="getPackageIdsByCourseIds" resultType="java.lang.Long">
+        select distinct package_id from package_course where course_id in
+        <foreach collection="courseIds" item="courseId" open="(" separator="," close=")">
+            #{courseId}
+        </foreach>
+    </select>
+</mapper>

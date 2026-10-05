@@ -1,7 +1,7 @@
 -- ai-service 在线反馈表（#06 Harness 工程 · 反馈回流）
 -- 用途：记录用户对推荐结果的反馈（点赞/点踩/下单），作为在线 Eval 集 —— 用户真实行为
 --       才是最强的 ground truth，定期聚合回离线 Eval 集，形成「线上回流 → 离线评估」闭环。
--- 执行：在 sports_takeout 库下执行本文件即可。
+-- 执行：在 onsite_fitness 库下执行本文件即可。
 
 CREATE TABLE IF NOT EXISTS `ai_eval_online` (
     `id`         BIGINT       NOT NULL AUTO_INCREMENT,

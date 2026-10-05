@@ -73,7 +73,7 @@ def run_one(name: str, query: str) -> RecommendResult:
 def main() -> int:
     console.print(
         Panel.fit(
-            "[bold cyan]体育外卖 · 教练推荐 Graph 离线冒烟测试[/]\n"
+            "[bold cyan]上门体育 · 教练推荐 Graph 离线冒烟测试[/]\n"
             "AI_MOCK=1 · 运行 4 条样例 · 验证 State/Node/Edge/Pydantic 全链路",
             title="LangGraph Smoke Test",
             border_style="cyan",

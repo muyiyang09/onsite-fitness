@@ -1,7 +1,7 @@
 <template>
     <div class="login-wrap">
         <el-card class="login-card">
-            <h2 class="title">体育外卖 · 管理端</h2>
+            <h2 class="title">上门体育 · 管理端</h2>
             <el-form @submit.prevent>
                 <el-form-item>
                     <el-input v-model="username" placeholder="账号" size="large" />

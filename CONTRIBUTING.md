@@ -11,7 +11,7 @@
 
 | 模块 | 要求 | 启动 |
 |---|---|---|
-| sky-take-out | JDK 21, Maven 3.9+ | `mvn spring-boot:run -pl sky-server` |
+| platform-backend | JDK 21, Maven 3.9+ | `mvn spring-boot:run -pl backend-server` |
 | ai-service | Python 3.11+, uv | `uv sync && uv run uvicorn app.main:app --reload` |
 | admin-web | Node 18+ | `npm ci && npm run dev` |
 

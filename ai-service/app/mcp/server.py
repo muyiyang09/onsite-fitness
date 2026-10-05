@@ -27,7 +27,7 @@ def build_server():
     except ImportError as exc:  # pragma: no cover - SDK 未装
         raise RuntimeError("未安装 mcp SDK，无法启动 MCP Server（pip install mcp）") from exc
 
-    mcp = FastMCP("sports-takeout-ai-tools")
+    mcp = FastMCP("onsite-fitness-ai-tools")
 
     # 把注册表里的每个工具动态注册到 MCP
     for meta in TOOL_REGISTRY.list_tools():

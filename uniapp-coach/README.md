@@ -1,4 +1,4 @@
-# 体育外卖 · 教练端（uniapp）
+# 上门体育 · 教练端（uniapp）
 
 上门私教平台教练端小程序，Vue 2 + uniapp，对接后端 `http://localhost:8080`。与用户端 `uniapp-user` 同骨架。
 
@@ -18,7 +18,7 @@
 ## 运行步骤
 
 1. HBuilderX 导入本目录。
-2. 后端先启动（`sky-server` 下 `mvn spring-boot:run`，需 MySQL/Redis）。
+2. 后端先启动（`backend-server` 下 `mvn spring-boot:run`，需 MySQL/Redis）。
 3. `api/request.js` 的 `BASE_URL` 默认 `http://localhost:8080`。
 4. 配置 `manifest.json` 的 mp-weixin appid。
 5. 运行到微信开发者工具。

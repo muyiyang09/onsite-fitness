@@ -436,7 +436,7 @@ async def ocr_certificate(args: dict) -> list[TextContent]:
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import Command
 
-SUPERVISOR_PROMPT = """你是体育外卖平台的 AI 调度员。
+SUPERVISOR_PROMPT = """你是上门体育平台的 AI 调度员。
 根据用户 query 决定路由到哪个 Agent：
 - "推荐教练" / "找教练" / "产后恢复" 等 → recommend_coach
 - "评价摘要" / "评价总结" / "教练评价怎么样" → review_summary
@@ -525,7 +525,7 @@ ocr_provider: str = Field(default="paddle", description="paddle / aliyun / tence
 | 5 | `app/graphs/supervisor.py` | Supervisor 路由 |
 | 6 | `app/mcp/server.py` | 加 ocr_certificate / verify_national_cert / count_reviews / fetch_reviews 工具 |
 | 7 | `app/prompts/review_*.yaml` | 抽 prompt |
-| 8 | `sky-take-out/.../mcp/...` | Java 端加 verify 工具 |
+| 8 | `platform-backend/.../mcp/...` | Java 端加 verify 工具 |
 | 9 | `app/main.py` | 加 3 个端点 |
 | 10 | `admin-web/src/views/...` | 管理端加审核界面（已存在，加 resume 调用） |
 

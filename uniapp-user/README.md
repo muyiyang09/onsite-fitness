@@ -1,4 +1,4 @@
-# 体育外卖 · 用户端（uniapp）
+# 上门体育 · 用户端（uniapp）
 
 上门私教平台用户端小程序，Vue 2 + uniapp，对接后端 `http://localhost:8080`。
 
@@ -20,13 +20,13 @@
 ## 运行步骤
 
 1. 用 **HBuilderX** 导入本目录（或 `uni-app` CLI）。
-2. 后端先启动：在 `sky-take-out/sky-server` 下 `mvn spring-boot:run`（需 MySQL/Redis 已启动、已导入 `sql/sports_take_out.sql`）。
+2. 后端先启动：在 `platform-backend/backend-server` 下 `mvn spring-boot:run`（需 MySQL/Redis 已启动、已导入 `sql/sports_take_out.sql`）。
 3. 改后端地址：`api/request.js` 的 `BASE_URL`（默认 `http://localhost:8080`）。
 4. 配置微信 appid：`manifest.json` → `mp-weixin.appid`（真机/微信预览需要）。
 5. 运行到微信开发者工具。
 
 ## 已知依赖
 
-- **微信登录**需要真实 appid/secret：前端 `manifest.json` 配 appid，后端 `application-dev.yml` 配 `sky.wx.app-id/app-secret`。无 appid 时登录会失败（其余浏览/下单接口需先登录拿 token）。
+- **微信登录**需要真实 appid/secret：前端 `manifest.json` 配 appid，后端 `application-dev.yml` 配 `onsite.wx.app-id/app-secret`。无 appid 时登录会失败（其余浏览/下单接口需先登录拿 token）。
 - 后端 token 头名为 `authentication`（见 `api/request.js`）。
 - MVP 用**模拟支付**：`PUT /user/order/payment` 直接改订单状态，无真实微信支付。

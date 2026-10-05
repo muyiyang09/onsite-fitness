@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     mysql_port: int = 3306
     mysql_user: str = "root"
     mysql_password: str = ""
-    mysql_database: str = "sports_takeout"
+    mysql_database: str = "onsite_fitness"
     # —— MySQL 连接池（#05 上线加固：显式配池，避免默认 5 连接被打满）——
     mysql_pool_size: int = Field(default=20, description="连接池常驻连接数")
     mysql_max_overflow: int = Field(default=10, description="池满后可临时超出的连接数")

@@ -1,4 +1,4 @@
-# 体育外卖 · 管理端 PC
+# 上门体育 · 管理端 PC
 
 Vue 3 + Element Plus + Vite，运营后台，对接后端 `http://localhost:8080`。
 
@@ -21,5 +21,5 @@ npm run dev
 ## 说明
 
 - Vite 代理已把 `/admin` 请求转发到 `http://localhost:8080`（无需后端配 CORS）。
-- 后端需先启动（`sky-take-out/sky-server` 下 `mvn spring-boot:run`）。
+- 后端需先启动（`platform-backend/backend-server` 下 `mvn spring-boot:run`）。
 - 教练审核是 MVP 关键闭环：新教练入驻后（status=0 待审核），需在此审核通过才能接单。

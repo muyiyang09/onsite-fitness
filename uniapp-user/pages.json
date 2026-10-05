@@ -3,7 +3,7 @@
         {
             "path": "pages/index/index",
             "style": {
-                "navigationBarTitleText": "体育外卖",
+                "navigationBarTitleText": "上门体育",
                 "navigationBarBackgroundColor": "#00B578",
                 "navigationBarTextStyle": "white"
             }
@@ -123,7 +123,7 @@
     },
     "globalStyle": {
         "navigationBarTextStyle": "white",
-        "navigationBarTitleText": "体育外卖",
+        "navigationBarTitleText": "上门体育",
         "navigationBarBackgroundColor": "#00B578",
         "backgroundColor": "#F5F6F7"
     }

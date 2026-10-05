@@ -1,7 +1,7 @@
 <template>
     <el-container class="layout">
         <el-aside width="200px" class="aside">
-            <div class="logo">体育外卖 · 管理端</div>
+            <div class="logo">上门体育 · 管理端</div>
             <el-menu
                 :default-active="$route.path"
                 background-color="#001529"

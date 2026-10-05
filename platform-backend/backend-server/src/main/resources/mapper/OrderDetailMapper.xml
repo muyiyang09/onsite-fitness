@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.onsitefitness.mapper.OrderDetailMapper">
+
+    <insert id="insertBatch">
+        insert into order_detail (order_id, course_id, course_package_id, name, image, coach_id, schedule_id,
+                                  schedule_date, time_slot, number, amount, create_time, update_time)
+        values
+        <foreach collection="orderDetailList" item="od" separator=",">
+            (#{od.orderId},#{od.courseId},#{od.coursePackageId},#{od.name},#{od.image},#{od.coachId},#{od.scheduleId},
+             #{od.scheduleDate},#{od.timeSlot},#{od.number},#{od.amount},#{od.createTime},#{od.updateTime})
+        </foreach>
+    </insert>
+</mapper>

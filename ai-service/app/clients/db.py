@@ -1,6 +1,6 @@
 """MySQL 只读访问层（SQLAlchemy 2.0 Core + pymysql）。
 
-AI 服务只读现有 sports_takeout 库（coach / course / category / coach_schedule），
+AI 服务只读现有 onsite_fitness 库（coach / course / category / coach_schedule），
 连接参数来自 config.settings.mysql_dsn。故意用「只读 + 惰性 engine + 查询函数」，
 不引入 ORM 模型，保持与 Java 后端解耦：后端改了表，AI 服务只需改 SQL 字符串。
 """

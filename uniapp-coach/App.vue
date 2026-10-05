@@ -1,7 +1,7 @@
 <script>
 export default {
     onLaunch: function() {
-        console.log('体育外卖教练端启动');
+        console.log('上门体育教练端启动');
     }
 };
 </script>

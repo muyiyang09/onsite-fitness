@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.onsitefitness.mapper.CoursePackageMapper">
+    <insert id="insert" parameterType="com.onsitefitness.entity.CoursePackage" useGeneratedKeys="true" keyProperty="id">
+        insert into course_package
+        (category_id, name, price, image, description, status, create_time, update_time, create_user, update_user)
+        values (#{categoryId}, #{name}, #{price}, #{image}, #{description}, #{status}, #{createTime}, #{updateTime},
+                #{createUser}, #{updateUser})
+    </insert>
+
+    <update id="update" parameterType="com.onsitefitness.entity.CoursePackage">
+        update course_package
+        <set>
+            <if test="name != null">
+                name = #{name},
+            </if>
+            <if test="categoryId != null">
+                category_id = #{categoryId},
+            </if>
+            <if test="price != null">
+                price = #{price},
+            </if>
+            <if test="image != null">
+                image = #{image},
+            </if>
+            <if test="description != null">
+                description = #{description},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="updateTime != null">
+                update_time = #{updateTime},
+            </if>
+            <if test="updateUser != null">
+                update_user = #{updateUser}
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <select id="pageQuery" resultType="com.onsitefitness.vo.CoursePackageVO">
+        select
+        p.*,c.name categoryName
+        from
+        course_package p
+        left join
+        category c
+        on
+        p.category_id = c.id
+        <where>
+            <if test="name != null">
+                and p.name like concat('%',#{name},'%')
+            </if>
+            <if test="categoryId != null">
+                and p.category_id = #{categoryId}
+            </if>
+        </where>
+        order by p.create_time desc
+    </select>
+
+    <select id="list" parameterType="com.onsitefitness.entity.CoursePackage" resultType="com.onsitefitness.entity.CoursePackage">
+        select * from course_package
+        <where>
+            <if test="name != null">
+                and name like concat('%',#{name},'%')
+            </if>
+            <if test="categoryId != null">
+                and category_id = #{categoryId}
+            </if>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <select id="countByMap" resultType="java.lang.Integer">
+        select count(id) from course_package
+        <where>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+            <if test="categoryId != null">
+                and category_id = #{categoryId}
+            </if>
+        </where>
+    </select>
+
+</mapper>

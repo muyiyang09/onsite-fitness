@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.onsitefitness.mapper.CoachMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into coach (openid, name, phone, password, sex, avatar, id_number, level, rating,
+                           service_radius_km, city_code, city_name, bio, status,
+                           create_time, update_time, create_user, update_user)
+        values (#{openid}, #{name}, #{phone}, #{password}, #{sex}, #{avatar}, #{idNumber}, #{level}, #{rating},
+                #{serviceRadiusKm}, #{cityCode}, #{cityName}, #{bio}, #{status},
+                #{createTime}, #{updateTime}, #{createUser}, #{updateUser})
+    </insert>
+
+    <update id="update" parameterType="com.onsitefitness.entity.Coach">
+        update coach
+        <set>
+            <if test="openid != null">openid = #{openid},</if>
+            <if test="name != null">name = #{name},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="password != null">password = #{password},</if>
+            <if test="sex != null">sex = #{sex},</if>
+            <if test="avatar != null">avatar = #{avatar},</if>
+            <if test="idNumber != null">id_number = #{idNumber},</if>
+            <if test="level != null">level = #{level},</if>
+            <if test="rating != null">rating = #{rating},</if>
+            <if test="serviceRadiusKm != null">service_radius_km = #{serviceRadiusKm},</if>
+            <if test="cityCode != null">city_code = #{cityCode},</if>
+            <if test="cityName != null">city_name = #{cityName},</if>
+            <if test="bio != null">bio = #{bio},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="updateUser != null">update_user = #{updateUser},</if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <select id="pageQuery" resultType="com.onsitefitness.entity.Coach">
+        select * from coach
+        <where>
+            <if test="name != null and name != ''">
+                and name like concat('%', #{name}, '%')
+            </if>
+            <if test="phone != null and phone != ''">
+                and phone like concat('%', #{phone}, '%')
+            </if>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <select id="listByCity" resultType="com.onsitefitness.entity.Coach">
+        select * from coach
+        <where>
+            status = 1
+            <if test="cityCode != null and cityCode != ''">
+                and city_code = #{cityCode}
+            </if>
+        </where>
+        order by rating desc, create_time desc
+    </select>
+
+</mapper>

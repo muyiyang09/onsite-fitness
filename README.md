@@ -1,6 +1,6 @@
 <div align="center">
 
-# 体育外卖 · AI 智能体平台
+# 上门体育 · AI 智能体平台
 
 **基于 Spring Boot + LangGraph 的上门私教 O2O 智能服务系统**
 
@@ -9,7 +9,7 @@
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.16-brightgreen.svg)](https://spring.io/)
 [![Vue](https://img.shields.io/badge/Vue-3.x-green.svg)](https://vuejs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115.6-009688)](https://fastapi.tiangolo.com/)
-[![GitHub Stars](https://img.shields.io/github/stars/muyiyang09/sports-takeout?style=social)](https://github.com/muyiyang09/sports-takeout/stargazers)
+[![GitHub Stars](https://img.shields.io/github/stars/muyiyang09/onsite-fitness?style=social)](https://github.com/muyiyang09/onsite-fitness/stargazers)
 [![Non-Commercial](https://img.shields.io/badge/Non--Commercial-License-red.svg)](#许可证-license)
 
 [中文](#项目介绍) | [English](#english)
@@ -20,7 +20,7 @@
 
 ## 项目介绍
 
-**体育外卖**（Sports Takeout）是一个面向上门私教 O2O 场景的智能服务平台，核心定位是"**把健身房搬到家里**"——教练携带便携器械上门，为用户提供科学的减脂、增肌、拉伸、产后恢复等一对一训练服务。
+**上门体育**（Onsite Fitness）是一个面向上门私教 O2O 场景的智能服务平台，核心定位是"**把健身房搬到家里**"——教练携带便携器械上门，为用户提供科学的减脂、增肌、拉伸、产后恢复等一对一训练服务。
 
 本项目在传统 O2O 业务系统之上，构建了一套独立的 **AI 微服务**（`ai-service`），基于 LangGraph Agent 框架，实现教练智能推荐、课程评价摘要、教练资质智能审核等 AI 能力，打造"业务系统 + AI 智能体"的双引擎架构。
 
@@ -150,7 +150,7 @@ OCR + 数据库比对 + HITL 人工确认的教练资质审核流程。
 
 ```bash
 git clone <仓库地址>
-cd sports-takeout
+cd onsite-fitness
 
 # 配置环境变量
 cp .env.example .env
@@ -239,7 +239,7 @@ Headers: x-service-token: <SERVICE_AUTH_TOKEN>
 ## 项目结构
 
 ```
-sports-takeout/
+onsite-fitness/
 ├── README.md                      # 项目说明（中英双版）
 ├── LICENSE                        # 非商业使用许可
 ├── PRD.md                         # 产品需求文档
@@ -271,10 +271,10 @@ sports-takeout/
 │   ├── tests/                     # 单元测试
 │   └── pyproject.toml             # Python 项目配置
 │
-├── sky-take-out/                  # Spring Boot 主后端
-│   ├── sky-common/                # 公共模块（常量/异常/工具）
-│   ├── sky-pojo/                  # 实体/DTO/VO
-│   └── sky-server/                # Spring Boot 主工程
+├── platform-backend/                  # Spring Boot 主后端
+│   ├── backend-common/                # 公共模块（常量/异常/工具）
+│   ├── backend-model/                  # 实体/DTO/VO
+│   └── backend-server/                # Spring Boot 主工程
 │
 ├── admin-web/                     # 管理端 Web（Vue 3 + Element Plus）
 │
@@ -331,10 +331,10 @@ MILVUS_MINIO_ACCESS_KEY=      # Milvus 内部对象存储凭据（禁用默认 m
 MILVUS_MINIO_SECRET_KEY=
 
 # ===== 强烈建议填写 =====
-SKY_JWT_ADMIN_KEY=            # 三端 JWT 密钥（openssl rand -hex 32）
-SKY_JWT_USER_KEY=
-SKY_JWT_COACH_KEY=
-SKY_AES_KEY=                  # 身份证号 AES-GCM 加密密钥（16/24/32 字节）
+ONSITE_JWT_ADMIN_KEY=            # 三端 JWT 密钥（openssl rand -hex 32）
+ONSITE_JWT_USER_KEY=
+ONSITE_JWT_COACH_KEY=
+ONSITE_AES_KEY=                  # 身份证号 AES-GCM 加密密钥（16/24/32 字节）
 SERVICE_AUTH_TOKEN=           # 后端 ↔ ai-service 机器间鉴权共享密钥
 LLM_API_KEY=                  # DeepSeek 等 LLM Key
 ```
@@ -432,14 +432,14 @@ stateDiagram-v2
 
 | 定制项 | 位置 | 说明 |
 |---|---|---|
-| 平台名称 | 小程序 `pages/index` 标题 + 管理端 `App.vue` 侧边栏 | 搜索「体育外卖」替换即可 |
+| 平台名称 | 小程序 `pages/index` 标题 + 管理端 `App.vue` 侧边栏 | 搜索「上门体育」替换即可 |
 | Logo | 小程序 `static/` + 管理端 `public/` | 替换图片文件 |
 | 主题色 | 管理端 `src/styles/` + 小程序 `uni.scss` | 修改 Element Plus / uni-app 主题变量 |
 | 课程分类 | 数据库 `category` 表 | 种子数据可自由增删 |
 
 ## 致谢与声明
 
-本项目基于「**苍穹外卖**」（sky-take-out，黑马程序员教学项目）技术骨架二次开发，将餐饮外卖领域模型重构为「上门私教」业务领域，感谢原项目提供的脚手架基础。
+本项目的业务底座沿用开源脚手架 platform-backend 的技术骨架，并将原有业务领域模型完整重构为「上门私教」业务域。感谢开源社区提供的脚手架基础。
 
 > ⚠️ 本项目为学习交流与作品展示用途。AI 微服务模块为自主研发，业务底座部分基于第三方教学项目重构。
 ## 演示账号
@@ -511,7 +511,7 @@ stateDiagram-v2
 
 ## English
 
-# Sports Takeout · AI Agent Platform
+# Onsite Fitness · AI Agent Platform
 
 **An AI-Powered O2O Personal Training Service System based on Spring Boot + LangGraph**
 
@@ -520,7 +520,7 @@ stateDiagram-v2
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.16-brightgreen.svg)](https://spring.io/)
 [![Vue](https://img.shields.io/badge/Vue-3.x-green.svg)](https://vuejs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115.6-009688)](https://fastapi.tiangolo.com/)
-[![GitHub Stars](https://img.shields.io/github/stars/muyiyang09/sports-takeout?style=social)](https://github.com/muyiyang09/sports-takeout/stargazers)
+[![GitHub Stars](https://img.shields.io/github/stars/muyiyang09/onsite-fitness?style=social)](https://github.com/muyiyang09/onsite-fitness/stargazers)
 [![Non-Commercial](https://img.shields.io/badge/Non--Commercial-License-red.svg)](#license)
 
 ## ⭐ Why This Repo Is Worth Your Time
@@ -541,13 +541,13 @@ Preparing for AI engineering interviews or doing tech selection? Go straight to 
 
 If this repo helps you, please give it a **⭐ Star** — it keeps the project alive.
 
-[Back to Top](#体育外卖--ai-智能体平台)
+[Back to Top](#上门体育--ai-智能体平台)
 
 ---
 
 ## Overview
 
-**Sports Takeout** is an AI-powered O2O (Online-to-Offline) platform for door-to-door personal training services. Our mission is to **bring the gym to your home** — certified trainers bring portable equipment (resistance bands, kettlebells, yoga mats, body composition scales, etc.) directly to clients' homes for one-on-one scientific training sessions, including fat loss, muscle gain, stretching, and postpartum recovery.
+**Onsite Fitness** is an AI-powered O2O (Online-to-Offline) platform for door-to-door personal training services. Our mission is to **bring the gym to your home** — certified trainers bring portable equipment (resistance bands, kettlebells, yoga mats, body composition scales, etc.) directly to clients' homes for one-on-one scientific training sessions, including fat loss, muscle gain, stretching, and postpartum recovery.
 
 This project extends a traditional O2O business system with an independent **AI microservice** (`ai-service`) built on the LangGraph Agent framework, providing intelligent coach recommendation, review summarization, and certificate verification capabilities — creating a dual-engine architecture combining conventional business logic with AI agents.
 
@@ -653,7 +653,7 @@ Unified entry point that routes user requests to the appropriate sub-agent with 
 
 ```bash
 git clone <repo-url>
-cd sports-takeout
+cd onsite-fitness
 
 # Configure environment variables
 cp .env.example .env
@@ -742,7 +742,7 @@ Headers: x-service-token: <SERVICE_AUTH_TOKEN>
 ## Project Structure
 
 ```
-sports-takeout/
+onsite-fitness/
 ├── README.md                      # Project documentation (bilingual)
 ├── LICENSE                        # Non-Commercial License
 ├── PRD.md                         # Product Requirements Document
@@ -767,10 +767,10 @@ sports-takeout/
 │   ├── tests/                     # Unit tests
 │   └── pyproject.toml             # Python project configuration
 │
-├── sky-take-out/                  # Spring Boot Main Backend
-│   ├── sky-common/                # Common module (constants/exceptions/utils)
-│   ├── sky-pojo/                  # Entities/DTOs/VOs
-│   └── sky-server/                # Spring Boot main application
+├── platform-backend/                  # Spring Boot Main Backend
+│   ├── backend-common/                # Common module (constants/exceptions/utils)
+│   ├── backend-model/                  # Entities/DTOs/VOs
+│   └── backend-server/                # Spring Boot main application
 │
 ├── admin-web/                     # Admin Web (Vue 3 + Element Plus)
 │
@@ -827,10 +827,10 @@ MILVUS_MINIO_ACCESS_KEY=      # Milvus internal object storage creds
 MILVUS_MINIO_SECRET_KEY=
 
 # ===== Strongly recommended =====
-SKY_JWT_ADMIN_KEY=            # JWT keys for three ends (openssl rand -hex 32)
-SKY_JWT_USER_KEY=
-SKY_JWT_COACH_KEY=
-SKY_AES_KEY=                  # AES-GCM key for ID encryption (16/24/32 bytes)
+ONSITE_JWT_ADMIN_KEY=            # JWT keys for three ends (openssl rand -hex 32)
+ONSITE_JWT_USER_KEY=
+ONSITE_JWT_COACH_KEY=
+ONSITE_AES_KEY=                  # AES-GCM key for ID encryption (16/24/32 bytes)
 SERVICE_AUTH_TOKEN=           # Shared secret between backend and ai-service
 LLM_API_KEY=                  # DeepSeek etc.
 ```
@@ -923,14 +923,14 @@ Full schema: `sql/sports_take_out.sql` (with seed data).
 
 | Item | Location | Description |
 |------|----------|-------------|
-| Platform name | Mini-program `pages/index` + Admin `App.vue` | Search & replace '体育外卖' |
+| Platform name | Mini-program `pages/index` + Admin `App.vue` | Search & replace '上门体育' |
 | Logo | Mini-program `static/` + Admin `public/` | Replace image files |
 | Theme color | Admin `src/styles/` + Mini-program `uni.scss` | Modify Element Plus / uni-app variables |
 | Course categories | Database `category` table | Edit seed data freely |
 
 ## Acknowledgments
 
-This project is based on the "苍穹外卖" (sky-take-out, a Heima programmer training project) technical skeleton, redeveloped from the food delivery domain to the "door-to-door personal training" domain. Thanks to the original project for providing the scaffolding foundation.
+This project builds on the technical skeleton of an open-source scaffold (platform-backend) and fully refactors the original business domain into a door-to-door personal training domain. Thanks to the open-source community for the scaffolding foundation.
 
 > ⚠️ This project is for learning, communication, and portfolio purposes. The AI microservice module is independently developed; the business foundation is partially refactored from a third-party training project.
 ## Demo Accounts
@@ -996,4 +996,4 @@ See the full [LICENSE](LICENSE) file for details. For collaboration or special l
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=muyiyang09/sports-takeout&type=Date)](https://star-history.com/#muyiyang09/sports-takeout&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=muyiyang09/onsite-fitness&type=Date)](https://star-history.com/#muyiyang09/onsite-fitness&Date)

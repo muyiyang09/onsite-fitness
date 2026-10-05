@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.onsitefitness.mapper.CoachCertificateMapper">
+
+    <insert id="insertBatch">
+        insert into coach_certificate (coach_id, cert_type, cert_no, image_url, status, reject_reason,
+                                       create_time, update_time, audit_user, audit_time)
+        values
+        <foreach collection="certificates" item="c" separator=",">
+            (#{c.coachId}, #{c.certType}, #{c.certNo}, #{c.imageUrl}, #{c.status}, #{c.rejectReason},
+             #{c.createTime}, #{c.updateTime}, #{c.auditUser}, #{c.auditTime})
+        </foreach>
+    </insert>
+
+    <select id="listByPageQuery" resultType="com.onsitefitness.entity.CoachCertificate">
+        select * from coach_certificate
+        <where>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <update id="updateStatus" parameterType="com.onsitefitness.entity.CoachCertificate">
+        update coach_certificate
+        <set>
+            <if test="status != null">status = #{status},</if>
+            <if test="rejectReason != null">reject_reason = #{rejectReason},</if>
+            <if test="auditUser != null">audit_user = #{auditUser},</if>
+            <if test="auditTime != null">audit_time = #{auditTime},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </set>
+        where id = #{id}
+    </update>
+
+</mapper>

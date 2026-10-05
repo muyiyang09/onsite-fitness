@@ -32,7 +32,7 @@ async def fetch_reviews(coach_id: int, limit: int = 30) -> list[dict[str, Any]]:
     if is_mock_db():
         return [{"content": r, "rating": 5} for r in _MOCK_REVIEWS[:limit]]
     try:
-        # 真实表名 = order_review；字段名 = coach_rating / create_time（对齐 sky-take-out SQL v0.2）。
+        # 真实表名 = order_review；字段名 = coach_rating / create_time（对齐 platform-backend SQL v0.2）。
         # limit 是 Pydantic 校验过的 int（1~200），直接内插无注入风险。
         rows = await afetch_all(
             "SELECT content, coach_rating AS rating FROM order_review "

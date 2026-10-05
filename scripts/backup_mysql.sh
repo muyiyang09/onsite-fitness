@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # MySQL 备份脚本（§6.33）—— 每日全量 + binlog 保留
 # 用法：bash scripts/backup_mysql.sh
-# crontab: 0 2 * * * /opt/sports-takeout/scripts/backup_mysql.sh
+# crontab: 0 2 * * * /opt/onsite-fitness/scripts/backup_mysql.sh
 set -euo pipefail
 
 BACKUP_DIR="${BACKUP_DIR:-/data/backups/mysql}"
@@ -10,7 +10,7 @@ DB_HOST="${MYSQL_HOST:-127.0.0.1}"
 DB_PORT="${MYSQL_PORT:-3306}"
 DB_USER="${MYSQL_USER:-root}"
 DB_PASS="${MYSQL_PASSWORD:?MYSQL_PASSWORD required}"
-DB_NAME="${MYSQL_DATABASE:-sports_takeout}"
+DB_NAME="${MYSQL_DATABASE:-onsite_fitness}"
 
 mkdir -p "$BACKUP_DIR"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)

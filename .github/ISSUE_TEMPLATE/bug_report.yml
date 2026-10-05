@@ -10,7 +10,7 @@ body:
     attributes:
       label: 涉及模块 / Module
       options:
-        - 后端 sky-take-out (Spring Boot)
+        - 后端 platform-backend (Spring Boot)
         - AI 微服务 ai-service (FastAPI/LangGraph)
         - 管理端 admin-web (Vue3)
         - 小程序 uniapp-user / uniapp-coach

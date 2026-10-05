@@ -1,7 +1,7 @@
 {
-    "name": "sports-takeout-admin",
+    "name": "onsite-fitness-admin",
     "version": "1.0.0",
-    "description": "体育外卖 · 上门私教平台管理端",
+    "description": "上门体育 · 上门私教平台管理端",
     "private": true,
     "type": "module",
     "scripts": {

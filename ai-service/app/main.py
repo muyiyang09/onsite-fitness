@@ -81,8 +81,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Sports Takeout · AI Service",
-    description="体育外卖 · AI 微服务：教练智能推荐（LangGraph + LiteLLM + Pydantic）",
+    title="Onsite Fitness · AI Service",
+    description="上门体育 · AI 微服务：教练智能推荐（LangGraph + LiteLLM + Pydantic）",
     version="0.2.0",
     lifespan=lifespan,
 )

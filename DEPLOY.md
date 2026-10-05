@@ -1,4 +1,4 @@
-# 体育外卖 · 上门私教平台 — 部署指南
+# 上门体育 · 上门私教平台 — 部署指南
 
 ## 一、Docker Compose 一键部署（推荐）
 
@@ -9,8 +9,8 @@
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/yourname/sports-takeout.git
-cd sports-takeout
+git clone https://github.com/yourname/onsite-fitness.git
+cd onsite-fitness
 
 # 2. 复制环境变量文件并修改
 cp .env.example .env
@@ -20,7 +20,7 @@ cp .env.example .env
 #   REDIS_PASSWORD           Redis 密码（已启用 requirepass）
 #   MILVUS_MINIO_ACCESS_KEY / MILVUS_MINIO_SECRET_KEY   Milvus 内部对象存储凭据
 # 建议同时填写：
-#   SKY_JWT_ADMIN_KEY / SKY_JWT_USER_KEY / SKY_JWT_COACH_KEY / SKY_AES_KEY
+#   ONSITE_JWT_ADMIN_KEY / ONSITE_JWT_USER_KEY / ONSITE_JWT_COACH_KEY / ONSITE_AES_KEY
 #   SERVICE_AUTH_TOKEN       后端 ↔ ai-service 机器间鉴权共享密钥
 #   LLM_API_KEY              AI 推荐链路 LLM Key
 
@@ -81,16 +81,16 @@ docker-compose down -v
 
 ```bash
 # 1. 创建数据库并导入表结构
-mysql -u root -p < sql/sports_take_out.sql
+mysql -u root -p < sql/onsite_fitness.sql
 
 # 2. 修改配置
-# 编辑 sky-take-out/sky-server/src/main/resources/application-dev.yml
+# 编辑 platform-backend/backend-server/src/main/resources/application-dev.yml
 # 修改数据库密码、Redis 地址等
 
 # 3. 编译并启动
-cd sky-take-out
+cd platform-backend
 mvn clean package -DskipTests -q
-java -jar sky-server/target/sky-server-*.jar
+java -jar backend-server/target/backend-server-*.jar
 ```
 
 ### 管理端前端启动
@@ -113,11 +113,11 @@ npm run dev
 ## 三、目录结构
 
 ```
-sports-takeout/
+onsite-fitness/
 ├── docker-compose.yml          # Docker Compose 编排（含 Milvus 三服务栈 + 可观测栈）
 ├── .env.example                # 环境变量模板（含必填项注释）
 ├── DEPLOY.md                   # 本文档
-├── sql/sports_take_out.sql     # 数据库建表 + 种子数据（14 张表）
+├── sql/onsite_fitness.sql     # 数据库建表 + 种子数据（14 张表）
 ├── sql/07-idempotency-indexes.sql  # 幂等唯一索引 + 应用账号授权
 ├── scripts/
 │   ├── smoke_test.sh           # 端到端冒烟测试（CI/CD 回滚依据）
@@ -129,11 +129,11 @@ sports-takeout/
 │   ├── Dockerfile              # AI 服务容器构建
 │   ├── .env.example            # AI 服务环境变量模板
 │   └── app/                    # graphs / clients / middleware / core / eval / mcp / tools
-├── sky-take-out/               # 后端工程
+├── platform-backend/               # 后端工程
 │   ├── Dockerfile              # 后端容器构建
-│   ├── sky-common/             # 公共模块（工具类/常量/异常）
-│   ├── sky-pojo/               # 实体/DTO/VO
-│   └── sky-server/             # Spring Boot 主工程
+│   ├── backend-common/             # 公共模块（工具类/常量/异常）
+│   ├── backend-model/               # 实体/DTO/VO
+│   └── backend-server/             # Spring Boot 主工程
 │       └── src/main/resources/
 │           ├── application.yml         # 主配置
 │           ├── application-dev.yml     # 开发环境配置
@@ -160,7 +160,7 @@ sports-takeout/
 bash scripts/smoke_test.sh
 
 # MySQL 每日备份（crontab 示例：每天凌晨 2 点）
-0 2 * * * /opt/sports-takeout/scripts/backup_mysql.sh
+0 2 * * * /opt/onsite-fitness/scripts/backup_mysql.sh
 ```
 
 ---
@@ -183,7 +183,7 @@ A: 确认后端已启动，且 `application-dev.yml` 中的数据库配置正确
 A: 检查后端是否在 8080 端口运行，且小程序的 `baseUrl` 配置正确。
 
 ### Q: 图片上传不成功？
-A: 需要配置阿里云 OSS。在 `.env` 中填写 `SKY_OSS_AK` 和 `SKY_OSS_SK`。
+A: 需要配置阿里云 OSS。在 `.env` 中填写 `ONSITE_OSS_AK` 和 `ONSITE_OSS_SK`。
 
 ---
 

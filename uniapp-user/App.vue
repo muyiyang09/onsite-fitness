@@ -1,7 +1,7 @@
 <script>
 export default {
     onLaunch: function() {
-        console.log('体育外卖用户端启动');
+        console.log('上门体育用户端启动');
     },
     onShow: function() {},
     onHide: function() {}
