@@ -8,6 +8,7 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -43,13 +44,16 @@ public class JwtUtil {
      */
     public static JwtTokenResult createJWT(String secretKey, long ttlMillis, Map<String, Object> claims) {
         String jti = UUID.randomUUID().toString();
-        claims.put("jti", jti);
+
+        // 不直接改写调用方入参（可能是 Map.of 等不可变 Map），复制后再写入 jti
+        Map<String, Object> allClaims = new HashMap<>(claims);
+        allClaims.put("jti", jti);
 
         long expMillis = System.currentTimeMillis() + ttlMillis;
         Date exp = new Date(expMillis);
 
         String token = Jwts.builder()
-                .claims(claims)
+                .claims(allClaims)
                 .signWith(getSigningKey(secretKey))
                 .expiration(exp)
                 .compact();
