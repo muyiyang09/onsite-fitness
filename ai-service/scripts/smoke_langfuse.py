@@ -3,6 +3,7 @@
 用法：cd ai-service && python scripts/smoke_langfuse.py
 期望输出：SMOKE OK（期间无未捕获异常）
 """
+
 import asyncio
 import os
 import sys
@@ -19,6 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 def main() -> None:
     # 1. import 整个 app：验证 FastAPI 路由注册接受 observe 装饰后的端点签名
     import app.main  # noqa: F401
+
     print("[1/4] app.main 导入成功（装饰器不影响路由签名解析）")
 
     from app.clients import langfuse_client
@@ -30,7 +32,6 @@ def main() -> None:
 
     from app.clients.langfuse_client import (
         observe_span,
-        update_current_generation,
         update_trace_meta,
     )
 
@@ -40,6 +41,7 @@ def main() -> None:
             usage=SimpleNamespace(prompt_tokens=11, completion_tokens=7, total_tokens=18)
         )
         from app.clients.llm import _record_generation
+
         _record_generation(resp, "mock output")
         return "mock output"
 
@@ -52,8 +54,10 @@ def main() -> None:
     @observe_span("api.smoke-root")
     async def root() -> None:
         update_trace_meta(
-            user_id="u1", session_id="s1",
-            metadata={"request_id": "req-smoke-1"}, tags=["smoke"],
+            user_id="u1",
+            session_id="s1",
+            metadata={"request_id": "req-smoke-1"},
+            tags=["smoke"],
         )
         await node()
 
