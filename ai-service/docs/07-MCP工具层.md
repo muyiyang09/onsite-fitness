@@ -39,6 +39,7 @@ from app.clients.db import fetch_all
 from app.clients.bm25 import search as bm25_search
 from app.clients.vectorstore import search as vector_search
 
+
 def retrieve_and_rank(state):
     coaches = _fetch_coaches(city)  # 直接调 db.fetch_all
     bm25_results = bm25_search(query)  # 直接调
@@ -170,6 +171,7 @@ def retrieve_and_rank(state):
 ```python
 # app/mcp/server.py（新增）
 """Python MCP Server：暴露教练推荐相关工具"""
+
 from mcp.server import Server
 from mcp.server.streamable_http import StreamableHTTPServer
 from mcp.types import Tool, TextContent
@@ -236,8 +238,11 @@ async def list_tools() -> list[Tool]:
 async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     if name == "fetch_coaches":
         from app.clients.db import afetch_all
-        sql = "SELECT id, name, sex, level, rating, service_radius_km, city_name, bio " \
-              "FROM coach WHERE status = 1"
+
+        sql = (
+            "SELECT id, name, sex, level, rating, service_radius_km, city_name, bio "
+            "FROM coach WHERE status = 1"
+        )
         params = {}
         if arguments.get("city_name"):
             sql += " AND city_name = :city_name"
@@ -250,16 +255,19 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
 
     elif name == "bm25_search":
         from app.clients.bm25 import search
+
         results = search(arguments["query"], arguments.get("top_k", 50))
         return [TextContent(type="text", text=json.dumps(results))]
 
     elif name == "vector_search":
         from app.clients.vectorstore import search as vsearch
+
         results = vsearch(arguments["query"], arguments.get("top_k", 50))
         return [TextContent(type="text", text=json.dumps(results))]
 
     elif name == "rerank":
         from app.clients.reranker import rerank as rrnk
+
         results = rrnk(arguments["query"], arguments["docs"], arguments.get("top_n", 3))
         return [TextContent(type="text", text=json.dumps(results, ensure_ascii=False, default=str))]
 
@@ -268,6 +276,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
 
 async def run_server():
     from mcp.server.streamable_http import StreamableHTTPServer
+
     server = StreamableHTTPServer(app, host="0.0.0.0", port=settings.mcp_server_port)
     await server.start_serve()
 ```
@@ -277,6 +286,7 @@ async def run_server():
 ```python
 # app/mcp/client.py（新增）
 """MCP Client：让 LangGraph 节点通过 MCP 调用工具，而非直接 import"""
+
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 from app.config import settings
@@ -310,8 +320,9 @@ async def list_tools() -> list[dict]:
     """列出所有可用工具（启动时缓存 schema）"""
     session = await get_session()
     resp = await session.list_tools()
-    return [{"name": t.name, "description": t.description, "schema": t.inputSchema}
-            for t in resp.tools]
+    return [
+        {"name": t.name, "description": t.description, "schema": t.inputSchema} for t in resp.tools
+    ]
 ```
 
 ### 3.4 节点改造（直接 import → MCP client）
@@ -324,25 +335,32 @@ async def list_tools() -> list[dict]:
 
 from app.mcp.client import call_tool as mcp_call
 
+
 async def retrieve_and_rank(state: RecommendState) -> dict[str, Any]:
     intent = state.get("intent") or {}
     user_query = state.get("user_query", "")
 
     # ---- 通过 MCP 调工具 ----
-    coaches = await mcp_call("fetch_coaches", {
-        "city_name": intent.get("city_name"),
-        "level_min": intent.get("level"),
-    })
+    coaches = await mcp_call(
+        "fetch_coaches",
+        {
+            "city_name": intent.get("city_name"),
+            "level_min": intent.get("level"),
+        },
+    )
     bm25_results = await mcp_call("bm25_search", {"query": user_query, "top_k": 50})
     vec_results = await mcp_call("vector_search", {"query": user_query, "top_k": 50})
 
     # ... 后续 RRF 融合 / Rerank 也通过 MCP 调 ...
     fused = _rrf_fuse(bm25_results, vec_results, top_k=30)
-    reranked = await mcp_call("rerank", {
-        "query": user_query,
-        "docs": [{"coach_id": cid, "text": ...} for cid, _ in fused[:30]],
-        "top_n": 10,
-    })
+    reranked = await mcp_call(
+        "rerank",
+        {
+            "query": user_query,
+            "docs": [{"coach_id": cid, "text": ...} for cid, _ in fused[:30]],
+            "top_n": 10,
+        },
+    )
 
     # ... 后续打分逻辑不变 ...
 ```
@@ -415,8 +433,9 @@ Python Agent 调 Java 工具：
 # Python Agent 调 Java 暴露的 MCP 工具
 async def some_node(state):
     # 调 Java 端 MCP Server（http://localhost:8080/mcp）
-    order = await mcp_call("query_order", {"order_id": 12345},
-                           server_url="http://spring-boot:8080/mcp")
+    order = await mcp_call(
+        "query_order", {"order_id": 12345}, server_url="http://spring-boot:8080/mcp"
+    )
 ```
 
 需要 MCP client 支持多 server 路由：
@@ -425,11 +444,12 @@ async def some_node(state):
 # app/mcp/client.py 扩展
 _sessions: dict[str, ClientSession] = {}
 
+
 async def call_tool(name: str, arguments: dict, server: str = "python") -> dict:
     """server: 'python' / 'java'"""
     url = {
-        "python": settings.mcp_python_url,   # http://localhost:18001
-        "java": settings.mcp_java_url,       # http://spring-boot:8080/mcp
+        "python": settings.mcp_python_url,  # http://localhost:18001
+        "java": settings.mcp_java_url,  # http://spring-boot:8080/mcp
     }[server]
     if server not in _sessions:
         # 创建 session

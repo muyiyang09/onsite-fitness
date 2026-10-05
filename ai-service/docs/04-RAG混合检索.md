@@ -47,7 +47,7 @@ fetch_available_slots()   → 全量捞 schedule
 ```python
 def _match_bio_score(bio: str, keywords: list[str]) -> int:
     bio_l = (bio or "").lower()
-    hits = [k for k in keywords if k.lower() in bio_l]   # ← 子串匹配，不是向量
+    hits = [k for k in keywords if k.lower() in bio_l]  # ← 子串匹配，不是向量
     if not hits:
         return 40
     return min(100, 50 + 30 + min(20, (len(hits) - 1) * 10))
@@ -190,6 +190,7 @@ Query ─────────────┼─ 向量稠密召回（语义�
 ```python
 # app/graphs/recommend_coach.py 改造
 
+
 def _hard_filter(coaches: list[dict], intent: dict) -> list[dict]:
     """结构化硬过滤：city / level / sex / rating。返回过滤后的教练列表。"""
     city_name = intent.get("city_name")
@@ -235,6 +236,7 @@ def _hard_filter(coaches: list[dict], intent: dict) -> list[dict]:
 教练 bio 量小（<1 万），全量加载内存。
 启动时构建索引（惰性首次调用），教练更新时增量重建。
 """
+
 from __future__ import annotations
 
 import logging
@@ -257,9 +259,7 @@ class _BM25Index:
         self.coach_ids: list[int] = [int(c["coach_id"]) for c in coaches]
         # 关键：把 bio + name + city_name 拼起来分词，召回更准
         self.corpus: list[list[str]] = [
-            list(jieba.cut(
-                f"{c.get('name', '')} {c.get('bio', '')} {c.get('city_name', '')}"
-            ))
+            list(jieba.cut(f"{c.get('name', '')} {c.get('bio', '')} {c.get('city_name', '')}"))
             for c in coaches
         ]
         self.bm25 = BM25Okapi(self.corpus)
@@ -269,9 +269,7 @@ class _BM25Index:
         """返回 [(coach_id, bm25_score)]，按分数降序。"""
         tokens = list(jieba.cut(query))
         scores = self.bm25.get_scores(tokens)
-        ranked = sorted(
-            zip(self.coach_ids, scores), key=lambda x: x[1], reverse=True
-        )
+        ranked = sorted(zip(self.coach_ids, scores), key=lambda x: x[1], reverse=True)
         return ranked[:top_k]
 
 
@@ -346,6 +344,7 @@ def rebuild_index() -> int:
 """Embedding 客户端：基于 sentence-transformers 加载 bge-m3。
 支持本地模型 + LiteLLM 远程模型两种模式。
 """
+
 from __future__ import annotations
 
 import logging
@@ -365,13 +364,15 @@ def _get_model():
     global _model
     if _model is None:
         from FlagEmbedding import BGEM3FlagModel  # type: ignore
+
         _model = BGEM3FlagModel(
             settings.embedding_model,
             use_fp16=settings.embedding_use_fp16,
             device=settings.embedding_device,
         )
-        logger.info("[Embedding] 模型加载完成：%s @ %s",
-                    settings.embedding_model, settings.embedding_device)
+        logger.info(
+            "[Embedding] 模型加载完成：%s @ %s", settings.embedding_model, settings.embedding_device
+        )
     return _model
 
 
@@ -395,6 +396,7 @@ def embed_one(text: str) -> np.ndarray:
 启动时惰性建集合 + HNSW 索引，支持多副本共享同一实例。
 pymilvus 未装 / Milvus 不可达 → 向量召回返回空，主链路退回 BM25 单路。
 """
+
 from __future__ import annotations
 
 import logging
@@ -414,13 +416,17 @@ def _get_client():
     global _client
     if _client is None:
         from pymilvus import MilvusClient  # type: ignore
+
         _client = MilvusClient(
             uri=settings.milvus_uri,
             token=settings.milvus_token,
             db_name=settings.milvus_database,
         )
-        logger.info("[VectorStore] Milvus 客户端就绪，uri=%s db=%s",
-                    settings.milvus_uri, settings.milvus_database)
+        logger.info(
+            "[VectorStore] Milvus 客户端就绪，uri=%s db=%s",
+            settings.milvus_uri,
+            settings.milvus_database,
+        )
     return _client
 
 
@@ -430,6 +436,7 @@ def _ensure_collection():
     if _collection_ready:
         return
     from pymilvus import DataType  # type: ignore
+
     client = _get_client()
     name = settings.milvus_collection
 
@@ -448,8 +455,7 @@ def _ensure_collection():
             params={"M": 16, "efConstruction": 64},
         )
         client.create_collection(name, schema=schema, index_params=index_params)
-        logger.info("[VectorStore] Milvus 集合已创建，name=%s dim=%d",
-                    name, settings.milvus_dim)
+        logger.info("[VectorStore] Milvus 集合已创建，name=%s dim=%d", name, settings.milvus_dim)
 
     client.load_collection(name)
     _collection_ready = True
@@ -461,8 +467,7 @@ def upsert_coaches(coaches: list[dict[str, Any]]) -> int:
         return 0
     _ensure_collection()
     client = _get_client()
-    texts = [f"{c.get('name', '')} {c.get('bio', '')} {c.get('city_name', '')}"
-             for c in coaches]
+    texts = [f"{c.get('name', '')} {c.get('bio', '')} {c.get('city_name', '')}" for c in coaches]
     vectors = embed(texts)
     client.upsert(
         collection_name=settings.milvus_collection,
@@ -499,8 +504,7 @@ def search(query: str, top_k: int = 50) -> list[tuple[int, float]]:
         )
         hits = result[0]  # COSINE metric 下 distance 即相似度（越大越相似）
         return [
-            (int(hit["entity"]["metadata"]["coach_id"]), float(hit["distance"]))
-            for hit in hits
+            (int(hit["entity"]["metadata"]["coach_id"]), float(hit["distance"])) for hit in hits
         ]
     except Exception as exc:
         logger.warning("[VectorStore] 召回失败（向量召回返回空，主链路退回 BM25 单路）：%s", exc)
@@ -547,6 +551,7 @@ score(doc) = Σ_i  1 / (k + rank_i(doc))
 
 RRF_K = 60  # 业界经验值
 
+
 def _rrf_fuse(
     bm25_results: list[tuple[int, float]],
     vec_results: list[tuple[int, float]],
@@ -586,6 +591,7 @@ Cross-Encoder 比 dual-encoder 准但慢 100 倍，所以：
 Cross-Encoder 把 (query, doc) 拼一起过模型，输出相关性分数。
 比 dual-encoder 准但慢，仅用于 top 30 → top N 的精排。
 """
+
 from __future__ import annotations
 
 import logging
@@ -602,6 +608,7 @@ def _get_model():
     global _model
     if _model is None:
         from FlagEmbedding import FlagReranker  # type: ignore
+
         _model = FlagReranker(
             settings.reranker_model,
             use_fp16=settings.reranker_use_fp16,
@@ -635,6 +642,7 @@ def rerank(query: str, docs: list[dict[str, Any]], top_n: int = 3) -> list[dict[
 
 ```python
 # app/graphs/recommend_coach.py 改造 retrieve_and_rank
+
 
 def retrieve_and_rank(state: RecommendState) -> dict[str, Any]:
     intent = state.get("intent") or {}
@@ -690,12 +698,15 @@ def retrieve_and_rank(state: RecommendState) -> dict[str, Any]:
 
     # ---- Stage 5: 与规则分融合 ----
     candidates = []
-    keywords = _expand_keywords(intent.get("specialization"),
-                                intent.get("specialization_tags") or [])
+    keywords = _expand_keywords(
+        intent.get("specialization"), intent.get("specialization_tags") or []
+    )
     matched_course, over_budget = _apply_budget(
-        _match_course(intent.get("specialization"),
-                      intent.get("specialization_tags") or [], courses),
-        intent.get("max_price"), courses,
+        _match_course(
+            intent.get("specialization"), intent.get("specialization_tags") or [], courses
+        ),
+        intent.get("max_price"),
+        courses,
     )
     bucket = _time_bucket(intent.get("time_slot"))
 
@@ -721,30 +732,32 @@ def retrieve_and_rank(state: RecommendState) -> dict[str, Any]:
         rerank_norm = rerank_score * 100
 
         # 最终分：α·规则 + β·rerank
-        alpha = settings.rule_weight           # 默认 0.3
-        beta = 1.0 - alpha                     # 默认 0.7
+        alpha = settings.rule_weight  # 默认 0.3
+        beta = 1.0 - alpha  # 默认 0.7
         final = alpha * rule_total + beta * rerank_norm
 
-        candidates.append(CoachCandidate(
-            coach_id=int(c["coach_id"]),
-            name=c.get("name", ""),
-            level=int(c.get("level") or 1),
-            rating=float(c.get("rating") or 0),
-            service_radius_km=float(c.get("service_radius_km") or 0),
-            city_name=c.get("city_name") or "",
-            bio=c.get("bio") or "",
-            specialization=matched_course.get("category") if matched_course else None,
-            course_name=matched_course.get("name") if matched_course else None,
-            price=float(matched_course["price"]) if matched_course else 0.0,
-            distance_km_est=None,
-            schedule_match_ratio=round(_schedule_ratio_safe(slots, c["coach_id"], bucket), 2),
-            score_rating=score_rating,
-            score_level=score_level,
-            score_match=score_match,
-            score_distance=score_distance,
-            score_schedule=score_schedule,
-            score_total=round(final, 2),
-        ))
+        candidates.append(
+            CoachCandidate(
+                coach_id=int(c["coach_id"]),
+                name=c.get("name", ""),
+                level=int(c.get("level") or 1),
+                rating=float(c.get("rating") or 0),
+                service_radius_km=float(c.get("service_radius_km") or 0),
+                city_name=c.get("city_name") or "",
+                bio=c.get("bio") or "",
+                specialization=matched_course.get("category") if matched_course else None,
+                course_name=matched_course.get("name") if matched_course else None,
+                price=float(matched_course["price"]) if matched_course else 0.0,
+                distance_km_est=None,
+                schedule_match_ratio=round(_schedule_ratio_safe(slots, c["coach_id"], bucket), 2),
+                score_rating=score_rating,
+                score_level=score_level,
+                score_match=score_match,
+                score_distance=score_distance,
+                score_schedule=score_schedule,
+                score_total=round(final, 2),
+            )
+        )
 
     # 候选为空兜底（rerank 失败 / 召回失败）
     if not candidates:
@@ -779,8 +792,10 @@ async def lifespan(app: FastAPI):
         from app.clients.vectorstore import upsert_coaches
 
         try:
-            rows = fetch_all("SELECT id, name, bio, city_name, sex, level, rating, "
-                             "service_radius_km, city_code FROM coach WHERE status = 1")
+            rows = fetch_all(
+                "SELECT id, name, bio, city_name, sex, level, rating, "
+                "service_radius_km, city_code FROM coach WHERE status = 1"
+            )
             coaches = [{"coach_id": r["id"], **r} for r in rows]
             get_bm25_index()  # 触发构建
             if not settings.vector_skip_initial_upsert:
@@ -815,8 +830,9 @@ def reindex(coach_ids: list[int] = Body([])):
 
     # 增量：仅更新指定 coach_ids
     placeholders = ",".join(str(i) for i in coach_ids)
-    rows = fetch_all(f"SELECT id, name, bio, city_name FROM coach "
-                     f"WHERE id IN ({placeholders}) AND status = 1")
+    rows = fetch_all(
+        f"SELECT id, name, bio, city_name FROM coach WHERE id IN ({placeholders}) AND status = 1"
+    )
     upsert_coaches([{"coach_id": r["id"], **r} for r in rows])
     rebuild_index()  # BM25 全量重建（数据量小，无需增量）
     return {"updated": len(rows)}
@@ -829,6 +845,7 @@ def reindex(coach_ids: list[int] = Body([])):
 ```python
 # app/main.py lifespan 钩子内启动后台任务
 import asyncio
+
 
 async def _periodic_rebuild():
     while True:
@@ -900,7 +917,9 @@ reranker_use_fp16: bool = Field(default=True)
 
 # —— 融合权重 ——
 rule_weight: float = Field(
-    default=0.3, ge=0.0, le=1.0,
+    default=0.3,
+    ge=0.0,
+    le=1.0,
     description="规则分权重 α；rerank 分权重 = 1 - α",
 )
 rrf_k: int = Field(default=60, description="RRF 平滑常数")

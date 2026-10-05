@@ -137,16 +137,23 @@ Trace（一次请求）
 ```python
 # app/eval/metrics.py（新增）
 """三类 metric：Intent 准确率 / Top-K 命中率 / 理由可读性"""
+
 from typing import Any
 
-def intent_field_accuracy(
-    predicted: dict, expected: dict, fields: list[str] = None
-) -> float:
+
+def intent_field_accuracy(predicted: dict, expected: dict, fields: list[str] = None) -> float:
     """IntentExtraction 字段级准确率（0~1）。
     非空字段匹配 = 1，不匹配 = 0，期望为 None 时不计入。
     """
-    fields = fields or ["city_name", "district", "specialization",
-                       "level", "max_price", "time_slot", "male_only"]
+    fields = fields or [
+        "city_name",
+        "district",
+        "specialization",
+        "level",
+        "max_price",
+        "time_slot",
+        "male_only",
+    ]
     correct, total = 0, 0
     for f in fields:
         exp = expected.get(f)
@@ -163,9 +170,7 @@ def intent_field_accuracy(
     return correct / total if total else 1.0
 
 
-def topk_hit_ratio(
-    predicted_ids: list[int], expected_subset: list[int]
-) -> float:
+def topk_hit_ratio(predicted_ids: list[int], expected_subset: list[int]) -> float:
     """Top-K 命中率：期望的教练 ID 至少有一个在 Top-K 中。
     返回 0~1，命中 1 个 = 1，全 miss = 0。
     """
@@ -192,10 +197,11 @@ def reason_quality_score(reason: str, candidates: list[dict]) -> dict:
     empty_words = ["很专业", "很棒", "非常好", "推荐"]
     has_empty = any(w in reason for w in empty_words)
     details["no_empty"] = 20 if not has_empty else 0
-    details["data_richness"] = 20 if any(
-        str(c.get("rating")) in reason or str(c.get("price")) in reason
-        for c in candidates
-    ) else 0
+    details["data_richness"] = (
+        20
+        if any(str(c.get("rating")) in reason or str(c.get("price")) in reason for c in candidates)
+        else 0
+    )
     return {"score": sum(details.values()), "details": details}
 ```
 
@@ -204,6 +210,7 @@ def reason_quality_score(reason: str, candidates: list[dict]) -> dict:
 ```python
 # app/eval/runner.py（新增）
 """Eval 运行器：跑数据集 + 算 metric + 输出报告"""
+
 import yaml
 from pathlib import Path
 from rich.console import Console
@@ -214,32 +221,39 @@ from app.eval.metrics import intent_field_accuracy, topk_hit_ratio, reason_quali
 
 console = Console()
 
+
 async def run_eval(dataset_path: str = "tests/eval/dataset.yaml") -> dict:
     cases = yaml.safe_load(Path(dataset_path).read_text(encoding="utf-8"))
     results = []
     for case in cases:
         try:
-            state_out = await RECOMMEND_GRAPH.ainvoke({
-                "user_query": case["query"], "top_n": 3
-            })
+            state_out = await RECOMMEND_GRAPH.ainvoke({"user_query": case["query"], "top_n": 3})
             result = RecommendResult.model_validate(state_out["result"])
         except Exception as exc:
-            results.append({"id": case["id"], "name": case["name"],
-                             "error": str(exc), "pass": False})
+            results.append(
+                {"id": case["id"], "name": case["name"], "error": str(exc), "pass": False}
+            )
             continue
 
         intent_acc = intent_field_accuracy(
             result.intent.model_dump(), case.get("expected_intent", {})
         )
         hit = topk_hit_ratio(result.coach_ids, case.get("expected_coach_ids_subset", []))
-        rq = reason_quality_score(result.recommend_reason, [c.model_dump() for c in result.candidates])
+        rq = reason_quality_score(
+            result.recommend_reason, [c.model_dump() for c in result.candidates]
+        )
         passed = intent_acc >= 0.6 and hit >= 1.0 and rq["score"] >= 60
 
-        results.append({
-            "id": case["id"], "name": case["name"],
-            "intent_acc": intent_acc, "topk_hit": hit,
-            "reason_score": rq["score"], "pass": passed,
-        })
+        results.append(
+            {
+                "id": case["id"],
+                "name": case["name"],
+                "intent_acc": intent_acc,
+                "topk_hit": hit,
+                "reason_score": rq["score"],
+                "pass": passed,
+            }
+        )
 
     # 汇总
     total = len(results)
@@ -247,7 +261,8 @@ async def run_eval(dataset_path: str = "tests/eval/dataset.yaml") -> dict:
     avg_intent = sum(r.get("intent_acc", 0) for r in results) / total
     avg_reason = sum(r.get("reason_score", 0) for r in results) / total
     return {
-        "passed": passed, "total": total,
+        "passed": passed,
+        "total": total,
         "pass_rate": passed / total,
         "avg_intent_acc": avg_intent,
         "avg_reason_score": avg_reason,
@@ -259,14 +274,18 @@ async def main():
     report = await run_eval()
     tbl = Table("ID", "Name", "Intent Acc", "TopK Hit", "Reason Score", "Pass")
     for r in report["details"]:
-        tbl.add_row(r.get("id", "-"), r.get("name", "-"),
-                    f"{r.get('intent_acc', 0):.2f}",
-                    f"{r.get('topk_hit', 0):.2f}",
-                    f"{r.get('reason_score', 0):.0f}",
-                    "✓" if r.get("pass") else "✗")
+        tbl.add_row(
+            r.get("id", "-"),
+            r.get("name", "-"),
+            f"{r.get('intent_acc', 0):.2f}",
+            f"{r.get('topk_hit', 0):.2f}",
+            f"{r.get('reason_score', 0):.0f}",
+            "✓" if r.get("pass") else "✗",
+        )
     console.print(tbl)
-    console.print(f"\n[bold]通过率：{report['passed']}/{report['total']} "
-                  f"({report['pass_rate']:.0%})[/]")
+    console.print(
+        f"\n[bold]通过率：{report['passed']}/{report['total']} ({report['pass_rate']:.0%})[/]"
+    )
     console.print(f"平均 Intent 准确率：{report['avg_intent_acc']:.2f}")
     console.print(f"平均理由质量分：{report['avg_reason_score']:.0f}")
 ```
@@ -377,6 +396,7 @@ from pathlib import Path
 
 _loaded: dict[str, dict] = {}
 
+
 def load_prompt(name: str, version: str = None) -> str:
     """加载 prompt 模板。version 留空取 label=production。"""
     if name not in _loaded:
@@ -399,6 +419,7 @@ SYSTEM_NODE1 = load_prompt("recommend_node1_intent")
 ```python
 # app/eval/judge.py（新增）
 """LLM-as-Judge：用便宜模型评判推荐理由质量"""
+
 from app.clients.llm import achat
 
 JUDGE_PROMPT = """你是推荐理由质量评估员。请给以下理由打分（0~100），按维度评：
@@ -415,12 +436,18 @@ JUDGE_PROMPT = """你是推荐理由质量评估员。请给以下理由打分�
 输出 JSON：{"score": int, "details": {维度: int}, "feedback": str}
 """
 
+
 async def judge_reason(user_goal: str, candidates: list, reason: str) -> dict:
-    text = await achat([
-        {"role": "system", "content": JUDGE_PROMPT.format(
-            user_goal=user_goal, candidates=candidates, reason=reason
-        )},
-    ])
+    text = await achat(
+        [
+            {
+                "role": "system",
+                "content": JUDGE_PROMPT.format(
+                    user_goal=user_goal, candidates=candidates, reason=reason
+                ),
+            },
+        ]
+    )
     return json.loads(text)
 ```
 
@@ -434,8 +461,13 @@ async def feedback(payload: FeedbackIn, request: Request):
     await afetch_all(
         "INSERT INTO ai_eval_online (request_id, user_id, action, coach_id, "
         "feedback, created_at) VALUES (:rid, :uid, :act, :cid, :fb, NOW())",
-        {"rid": payload.request_id, "uid": request.headers.get("x-user-id"),
-         "act": payload.action, "cid": payload.coach_id, "fb": payload.feedback},
+        {
+            "rid": payload.request_id,
+            "uid": request.headers.get("x-user-id"),
+            "act": payload.action,
+            "cid": payload.coach_id,
+            "fb": payload.feedback,
+        },
     )
     return {"ok": True}
 ```

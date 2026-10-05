@@ -299,7 +299,8 @@ def generate_reason(state):
         return {"branch": "done"}
     # 机制 2：质量门控
     ok, _ = _check_reason_quality(reason, candidates)
-    if ok: return {"branch": "done"}
+    if ok:
+        return {"branch": "done"}
     # 机制 3：重复检测
     if reason == state.get("last_reason"):
         return {"branch": "done", "reason": _mock_generate_reason(...)}
@@ -314,9 +315,18 @@ A：State hash 对比——节点入口算 state 的 hash（排除 retry_count �
 
 ```python
 def _state_signature(state):
-    return hash(json.dumps({k: v for k, v in state.items()
-        if k not in ("retry_count", "reason_retry_count", "branch")},
-        sort_keys=True, default=str))
+    return hash(
+        json.dumps(
+            {
+                k: v
+                for k, v in state.items()
+                if k not in ("retry_count", "reason_retry_count", "branch")
+            },
+            sort_keys=True,
+            default=str,
+        )
+    )
+
 
 # 节点入口
 sig = _state_signature(state)
@@ -372,8 +382,10 @@ class LockRegistry:
                 pass  # 超时/异常都跳过，不让清理卡死
         self._tls.set([])  # 清空，防重复释放
 
+
 # app/api/routes.py —— Graph 执行 + 强制终止清理
 lock_registry = LockRegistry()
+
 
 async def run_graph_with_cleanup(state, config):
     """Graph 执行 + 强制终止时的资源清理。"""
@@ -383,8 +395,7 @@ async def run_graph_with_cleanup(state, config):
         return result
     except GraphRecursionError:
         # recursion_limit 触发
-        logger.warning("Graph 触发递归上限，thread_id=%s",
-                       config["configurable"]["thread_id"])
+        logger.warning("Graph 触发递归上限，thread_id=%s", config["configurable"]["thread_id"])
         # 1. 标记 state 为强制终止
         await checkpointer.aput(config, {**state, "_forced_end": True})
         # 2. 释放所有锁（统一走 registry，不在这里遍历局部变量）
@@ -395,6 +406,7 @@ async def run_graph_with_cleanup(state, config):
         # 兜底：统一释放（release_all 内部已清空列表，不会重复释放）
         await lock_registry.release_all()
         lock_registry._tls.reset(token)  # 恢复上下文
+
 
 # app/graphs/recommend_coach.py —— 节点内获取锁时注册
 async def supervisor_route(state):
@@ -425,6 +437,7 @@ A：死锁的四个必要条件（互斥/占有等待/不剥夺/循环等待）�
 # 死锁防护：锁排序（所有 Agent 按同一顺序获取锁，破坏循环等待）
 LOCK_ORDER = ["coach_lock", "order_lock", "review_lock"]  # 全局固定顺序
 
+
 async def acquire_ordered(needed_locks: list[str]):
     """按全局顺序获取锁，杜绝循环等待。"""
     sorted_names = sorted(needed_locks, key=lambda n: LOCK_ORDER.index(n))
@@ -433,7 +446,8 @@ async def acquire_ordered(needed_locks: list[str]):
         lock = redis.lock(name, timeout=10)
         if not await lock.acquire(blocking=False):
             # 获取失败，回滚已持有的
-            for l in held: await l.release()
+            for l in held:
+                await l.release()
             raise LockAcquireError(name)
         held.append(lock)
     return held  # 调用方用完释放
@@ -480,7 +494,8 @@ A：用 Redis 分布式锁保证同一 query 只一个副本调 LLM：
 async def supervisor_route(query):
     cache_key = f"route:{hashlib.md5(query.encode()).hexdigest()}"
     cached = await redis.get(cache_key)
-    if cached: return cached
+    if cached:
+        return cached
 
     lock = redis.lock(f"route:lock:{cache_key}", timeout=10)
     if await lock.acquire(blocking=False):
@@ -588,6 +603,7 @@ async def supervisor_route(query: str) -> str:
 
 ```python
 _llm_semaphore = asyncio.Semaphore(settings.llm_concurrency)  # 默认 50
+
 
 async def achat(messages):
     async with _llm_semaphore:  # 限制同时调 LLM 的并发数
@@ -729,10 +745,12 @@ class HandoffPayloadV1(BaseModel):
     input: dict
     version: str = "1.0"
 
+
 class HandoffPayloadV2(BaseModel):
     # V2 新增 long_term_memory 字段
     long_term_memory: list = Field(default_factory=list)
     version: str = "2.0"
+
 
 def parse_handoff(payload: dict):
     version = payload.get("version", "1.0")
@@ -746,6 +764,7 @@ A：LLM 输出 JSON 不可靠——格式错误、字段缺失、多余字段都
 
 ```python
 from pydantic import ValidationError
+
 
 def safe_parse_handoff(raw: str | dict, context: dict) -> HandoffPayloadV2:
     """解析 LLM 输出的 Handoff，三级兜底。"""
@@ -776,9 +795,11 @@ def safe_parse_handoff(raw: str | dict, context: dict) -> HandoffPayloadV2:
         version="2.0",
     )
 
+
 def extract_json(text: str) -> dict:
     """从 LLM 文本中提取 JSON（LLM 常带 ```json 标记或多余文字）。"""
     import re
+
     match = re.search(r"```(?:json)?\s*(\{.*\})\s*```", text, re.DOTALL)
     if match:
         return json.loads(match.group(1))
@@ -828,6 +849,7 @@ A：灰度发布时 V1/V2 Agent 混存，必须兼容：
 ```python
 # Pydantic V2 模型兼容 V1 字段
 from pydantic import field_validator
+
 
 class HandoffPayloadV2(BaseModel):
     long_term_memory: list = Field(default_factory=list)
@@ -941,6 +963,7 @@ A：能，且是业界最佳实践：
 # app/ingest/splitter.py —— 工程化分片器
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+
 class SafeSplitter:
     """递归分片 + 危险边界保护。"""
 
@@ -949,7 +972,8 @@ class SafeSplitter:
 
     def __init__(self, chunk_size: int = 500, overlap: int = 50):
         self._inner = RecursiveCharacterTextSplitter(
-            chunk_size=chunk_size, chunk_overlap=overlap,
+            chunk_size=chunk_size,
+            chunk_overlap=overlap,
             # 递归顺序：段落 → 句号 → 逗号 → 空格 → 字符
             separators=["\n\n", "\n", "。", "！", "？", "；", "，", " ", ""],
             length_function=len,
@@ -980,15 +1004,15 @@ def ingest_course_detail(course: dict) -> list[dict]:
     chunks = SafeSplitter(chunk_size=500, overlap=50).split_text(course["detail"])
     return [
         {
-            "id": f"course_{course['id']}#chunk_{i}",   # 片 ID
+            "id": f"course_{course['id']}#chunk_{i}",  # 片 ID
             "text": chunk,
             "metadata": {
-                "doc_id": f"course_{course['id']}",     # 源文档 ID
-                "chunk_idx": i,                         # 第几片
-                "total_chunks": len(chunks),            # 共几片
-                "doc_type": "course_detail",            # 文档类型
-                "course_id": course["id"],             # 业务 ID
-                "title": course["name"],                # 标题（召回后展示用）
+                "doc_id": f"course_{course['id']}",  # 源文档 ID
+                "chunk_idx": i,  # 第几片
+                "total_chunks": len(chunks),  # 共几片
+                "doc_type": "course_detail",  # 文档类型
+                "course_id": course["id"],  # 业务 ID
+                "title": course["name"],  # 标题（召回后展示用）
             },
         }
         for i, chunk in enumerate(chunks)
@@ -1021,8 +1045,7 @@ async def retrieve_with_context(query: str, top_k: int = 5) -> list[dict]:
     for cid, score in unique[:top_k]:
         doc_id = _get_metadata(cid)["doc_id"]
         parent = await vectorstore.get_parent_chunk(doc_id)  # 大片
-        result.append({"text": parent, "score": score,
-                       "doc_id": doc_id, "child_id": cid})
+        result.append({"text": parent, "score": score, "doc_id": doc_id, "child_id": cid})
     return result
 ```
 
@@ -1050,7 +1073,7 @@ def assemble_context(hits: list[dict], max_tokens: int = 2000) -> str:
 
     # 超长截断（保留头部，尾部通常是总结性信息）
     if len(context) > max_tokens * 4:  # 粗估 1 token ≈ 4 字符
-        context = context[:max_tokens * 4] + "\n[已截断]"
+        context = context[: max_tokens * 4] + "\n[已截断]"
     return context
 ```
 
@@ -1093,11 +1116,16 @@ def eval_split_quality(chunks: list[dict]) -> dict:
 def ingest_all():
     # 1. 教练 bio：整片入库（不分片）
     coaches = fetch_all("SELECT id, name, bio, city_name FROM coach WHERE status=1")
-    vectorstore.upsert([
-        {"id": f"coach_{c['id']}", "text": f"{c['name']} {c['bio']} {c['city_name']}",
-         "metadata": {"doc_type": "coach_bio", "coach_id": c["id"], "title": c["name"]}}
-        for c in coaches
-    ])
+    vectorstore.upsert(
+        [
+            {
+                "id": f"coach_{c['id']}",
+                "text": f"{c['name']} {c['bio']} {c['city_name']}",
+                "metadata": {"doc_type": "coach_bio", "coach_id": c["id"], "title": c["name"]},
+            }
+            for c in coaches
+        ]
+    )
 
     # 2. 课程详情：递归分片 + 边界保护 + 元数据 + 父子分片
     courses = fetch_all("SELECT id, name, detail FROM course WHERE status=1")
@@ -1108,21 +1136,37 @@ def ingest_all():
         if not q["pass"]:
             logger.warning("课程%s 分片质量问题：%s", course["id"], q["issues"])
         vectorstore.upsert_child_parent(
-            children=[{"text": ch, "metadata": {"doc_id": f"course_{course['id']}",
-                     "chunk_idx": i, "title": course["name"]}}
-                     for i, ch in enumerate(chunks)],
-            parents=[{"text": course["detail"],   # 父片=原文，召回子片返回父片
-                     "metadata": {"doc_id": f"course_{course['id']}"}}],
+            children=[
+                {
+                    "text": ch,
+                    "metadata": {
+                        "doc_id": f"course_{course['id']}",
+                        "chunk_idx": i,
+                        "title": course["name"],
+                    },
+                }
+                for i, ch in enumerate(chunks)
+            ],
+            parents=[
+                {
+                    "text": course["detail"],  # 父片=原文，召回子片返回父片
+                    "metadata": {"doc_id": f"course_{course['id']}"},
+                }
+            ],
         )
 
     # 3. 用户评价：按条入库（不分片），按 coach_id 聚合
     reviews = fetch_all("SELECT id, coach_id, content FROM order_review")
-    vectorstore.upsert([
-        {"id": f"review_{r['id']}", "text": r["content"],
-         "metadata": {"doc_type": "review", "coach_id": r["coach_id"],
-                      "review_id": r["id"]}}
-        for r in reviews
-    ])
+    vectorstore.upsert(
+        [
+            {
+                "id": f"review_{r['id']}",
+                "text": r["content"],
+                "metadata": {"doc_type": "review", "coach_id": r["coach_id"], "review_id": r["id"]},
+            }
+            for r in reviews
+        ]
+    )
 ```
 
 #### 进阶追问 + 答案
@@ -1159,12 +1203,16 @@ A：**发现 → 止血 → 根治**三步：
 # 线上：用户反馈"推荐不准"时，记录 query + 召回片 + Agent 输出
 @app.post("/v1/ai/recommend/feedback")
 async def feedback(payload):
-    await log_to_langfuse(payload.request_id, {
-        "query": payload.query,
-        "retrieved_chunks": payload.retrieved,   # 哪些片被召回
-        "agent_output": payload.output,          # Agent 说了啥
-        "user_complaint": payload.complaint,     # 用户吐槽
-    })
+    await log_to_langfuse(
+        payload.request_id,
+        {
+            "query": payload.query,
+            "retrieved_chunks": payload.retrieved,  # 哪些片被召回
+            "agent_output": payload.output,  # Agent 说了啥
+            "user_complaint": payload.complaint,  # 用户吐槽
+        },
+    )
+
 
 # 离线：跑 Eval 时加"上下文完整性"检查
 def eval_context_completeness(query, retrieved, ground_truth_answer):
@@ -1172,7 +1220,7 @@ def eval_context_completeness(query, retrieved, ground_truth_answer):
     required_facts = extract_facts(ground_truth_answer)  # 从标准答案提事实
     context = assemble_context(retrieved)
     missing = [f for f in required_facts if f not in context]
-    return {"score": 1 - len(missing)/len(required_facts), "missing": missing}
+    return {"score": 1 - len(missing) / len(required_facts), "missing": missing}
 ```
 
 **② 止血（临时切换）**：
@@ -1712,10 +1760,13 @@ A：模拟操作系统虚拟内存：
 await redis.hset(f"user:{uid}:prefs", "time_slot", "周末上午")
 await redis.expire(f"user:{uid}:prefs", 86400 * 30)  # 30 天过期
 
+
 # 召回相关历史（仅 Top 5）
 async def recall_memory(user_id, query, top_k=5):
     memories = await vectorstore.search(
-        query=query, filter={"user_id": user_id}, top_k=top_k * 3,
+        query=query,
+        filter={"user_id": user_id},
+        top_k=top_k * 3,
     )
     # 时间衰减
     now = time.time()
@@ -1786,6 +1837,7 @@ state_out = await RECOMMEND_GRAPH.ainvoke(
 
 # Store 用法（长期）
 from langgraph.store.memory import InMemoryStore
+
 store = InMemoryStore()
 await store.aput(
     namespace=("user_profile", user_id),
@@ -1874,10 +1926,12 @@ async def extract_intent(state):
         )
     return {"intent": intent}
 
+
 # 异步写：用户点击行为
 @app.post("/v1/ai/feedback")
 async def feedback(payload):
     await afetch_all("INSERT INTO ai_eval_online ...", ...)
+
 
 # 后台任务：每小时聚合点击 → 偏好
 async def hourly_aggregate():
@@ -1968,16 +2022,17 @@ A：
 # 共享画像（所有 Agent 可读）
 class UserProfile(BaseModel):
     user_id: str
-    basic: dict           # 性别 / 年龄段 / 城市
-    preferences: dict     # 偏好（教练等级 / 时段 / 价格区间）
-    constraints: dict     # 约束（腰突 / 产后 / 恢复期）
+    basic: dict  # 性别 / 年龄段 / 城市
+    preferences: dict  # 偏好（教练等级 / 时段 / 价格区间）
+    constraints: dict  # 约束（腰突 / 产后 / 恢复期）
     updated_at: datetime
+
 
 # 私有记忆（仅 Agent 自己读写）
 class AgentMemory(BaseModel):
     user_id: str
-    agent_name: str       # recommend_coach / review_summary / cert_review
-    memory_type: str      # episode / procedure
+    agent_name: str  # recommend_coach / review_summary / cert_review
+    memory_type: str  # episode / procedure
     content: dict
     created_at: datetime
 ```
@@ -2003,13 +2058,14 @@ await store.aput(
     metadata={"sensitive": True, "allowed_agents": ["recommend_coach"]},
 )
 
+
 # 召回时检查权限
 async def safe_recall(agent_name, user_id, query):
     memories = await store.search(namespace=("user", user_id, "facts"), query=query)
     return [
-        m for m in memories
-        if not m.metadata.get("sensitive")
-        or agent_name in m.metadata.get("allowed_agents", [])
+        m
+        for m in memories
+        if not m.metadata.get("sensitive") or agent_name in m.metadata.get("allowed_agents", [])
     ]
 ```
 
@@ -2056,7 +2112,8 @@ def should_continue(state):
     last = state["messages"][-1]
     if isinstance(last, AIMessage) and last.tool_calls:
         return "to_tools"  # LLM 要求调工具
-    return "to_end"        # LLM 给最终答案
+    return "to_end"  # LLM 给最终答案
+
 
 # ToolNode 收到 tool_calls 后并行执行，结果回 LLM
 ```
@@ -2103,9 +2160,7 @@ review_summary 的 Map 阶段是 **Map-Reduce**（[08 §1.2](./08-多Agent实现
 
 ```python
 # 批量并行处理评价
-results = await asyncio.gather(*[
-    process_batch(b, coach_id) for b in batches
-])
+results = await asyncio.gather(*[process_batch(b, coach_id) for b in batches])
 ```
 
 **进阶追问 + 答案**：
@@ -2124,14 +2179,14 @@ A：用 `asyncio.Semaphore` 包装工具：
 ```python
 _parallel_semaphore = asyncio.Semaphore(5)  # 最多 5 个并行
 
+
 async def call_tool_with_limit(tool_name, args):
     async with _parallel_semaphore:
         return await mcp_call(tool_name, args)
 
+
 # 并行调用但限制总数
-results = await asyncio.gather(*[
-    call_tool_with_limit(name, args) for name, args in tool_list
-])
+results = await asyncio.gather(*[call_tool_with_limit(name, args) for name, args in tool_list])
 ```
 
 **项目落地参考**：[#04 §3.7 并行召回](./04-RAG混合检索.md)
@@ -2162,24 +2217,28 @@ async def react_agent(state):
     response = await achat_with_tools(messages, tools=TOOLS)
 
     if response.tool_calls:
-        tool_results = await asyncio.gather(*[
-            execute_tool(tc) for tc in response.tool_calls
-        ], return_exceptions=True)
+        tool_results = await asyncio.gather(
+            *[execute_tool(tc) for tc in response.tool_calls], return_exceptions=True
+        )
 
         # 关键：失败的工具结果也要喂回 LLM
         for tc, result in zip(response.tool_calls, tool_results):
             if isinstance(result, Exception):
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tc["id"],
-                    "content": f"工具调用失败：{result}. 请换工具或换参数重试。",
-                })
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tc["id"],
+                        "content": f"工具调用失败：{result}. 请换工具或换参数重试。",
+                    }
+                )
             else:
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tc["id"],
-                    "content": json.dumps(result),
-                })
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tc["id"],
+                        "content": json.dumps(result),
+                    }
+                )
 
         return {"messages": messages, "branch": "to_tools"}
 
@@ -2225,6 +2284,7 @@ async def create_order_idempotent(user_id, coach_id, idempotency_key):
         # 失败时不写 idempotency_key，允许重试
         raise
 
+
 # Saga 补偿：失败时调补偿工具
 async def book_coach_saga(user_id, coach_id):
     try:
@@ -2233,7 +2293,7 @@ async def book_coach_saga(user_id, coach_id):
         await notify_coach(coach_id, order.id)
         return order
     except Exception:
-        if 'order' in locals():
+        if "order" in locals():
             await cancel_order(order.id)
         raise
 ```
@@ -2335,13 +2395,14 @@ A：
 ```python
 # 工具分级
 TOOL_LEVELS = {
-    "fetch_coaches": "read",        # 只读，自由调
+    "fetch_coaches": "read",  # 只读，自由调
     "bm25_search": "read",
     "vector_search": "read",
     "verify_national_cert": "read",
-    "init_refund": "write",         # 写操作，需 LLM 决策
-    "approve_cert": "dangerous",    # 危险，必须 HITL
+    "init_refund": "write",  # 写操作，需 LLM 决策
+    "approve_cert": "dangerous",  # 危险，必须 HITL
 }
+
 
 async def call_tool_safe(tool_name, args, user_id):
     level = TOOL_LEVELS.get(tool_name, "read")
@@ -2493,10 +2554,12 @@ async def react_agent(state):
     messages = state["messages"]
     if state.get("need_replan"):
         # 前面规划错了，注入修正提示
-        messages.append({
-            "role": "user",
-            "content": f"前面的规划有问题：{state['replan_reason']}。请重新规划后续步骤。",
-        })
+        messages.append(
+            {
+                "role": "user",
+                "content": f"前面的规划有问题：{state['replan_reason']}。请重新规划后续步骤。",
+            }
+        )
     response = await achat_with_tools(messages, tools=TOOLS)
     ...
 ```
@@ -2648,12 +2711,17 @@ async def plan_batches(state) -> dict:
     first_batch = {"offset": 0, "limit": min(batch_size, total)}
 
     # 让 LLM 验证 plan 合理性
-    plan_text = await achat([
-        {"role": "system", "content": PLAN_VALIDATOR_PROMPT},
-        {"role": "user", "content": json.dumps({
-            "total": total, "batch_size": batch_size, "first_batch": first_batch
-        })},
-    ])
+    plan_text = await achat(
+        [
+            {"role": "system", "content": PLAN_VALIDATOR_PROMPT},
+            {
+                "role": "user",
+                "content": json.dumps(
+                    {"total": total, "batch_size": batch_size, "first_batch": first_batch}
+                ),
+            },
+        ]
+    )
     plan_validation = json.loads(plan_text)
 
     if not plan_validation["valid"]:
@@ -2798,13 +2866,16 @@ cert_review 的 HITL（[08 §2.4](./08-多Agent实现.md)）：
 ```python
 from langgraph.types import interrupt, Command
 
+
 async def hitl_checkpoint(state) -> dict:
     # interrupt 暂停 Graph
-    decision = interrupt({
-        "prompt": "证书审核人工确认",
-        "fields": state["fields"],
-        "risk_level": state["risk_level"],
-    })
+    decision = interrupt(
+        {
+            "prompt": "证书审核人工确认",
+            "fields": state["fields"],
+            "risk_level": state["risk_level"],
+        }
+    )
 
     # 这行代码在 resume 后才执行
     # decision 是外部 Command(resume=...) 传进来的
@@ -2814,6 +2885,7 @@ async def hitl_checkpoint(state) -> dict:
         return {"branch": "rejected"}
     else:
         return {"branch": "more_info", "follow_up": decision.get("query")}
+
 
 # 外部恢复
 @app.post("/v1/ai/cert-review/{thread_id}/resume")
@@ -3132,6 +3204,7 @@ human_scores = np.array([...])
 iso = IsotonicRegression()
 iso.fit(llm_scores, human_scores)
 
+
 def calibrate(llm_score):
     return float(iso.transform([llm_score])[0])
 ```
@@ -3165,6 +3238,7 @@ def recall_at_k(retrieved_ids: list[str], ground_truth: str, k: int = 5) -> floa
     """Top K 召回率：ground truth 教练是否在 Top K"""
     return 1.0 if ground_truth in retrieved_ids[:k] else 0.0
 
+
 def ndcg_at_k(retrieved_ids: list[str], ground_truth: str, k: int = 5) -> float:
     """归一化折损累计增益：ground truth 越靠前分越高"""
     if ground_truth not in retrieved_ids[:k]:
@@ -3172,11 +3246,13 @@ def ndcg_at_k(retrieved_ids: list[str], ground_truth: str, k: int = 5) -> float:
     rank = retrieved_ids.index(ground_truth) + 1
     return 1.0 / math.log2(rank + 1)  # 位置 1 → 1.0, 位置 2 → 0.63, ...
 
+
 def intent_accuracy(extracted: dict, ground_truth: dict) -> float:
     """意图抽取字段准确率：location/budget/goal 每个字段算对不对"""
     fields = ["location", "budget", "goal", "time_slot"]
     correct = sum(1 for f in fields if extracted.get(f) == ground_truth.get(f))
     return correct / len(fields)
+
 
 # Node1 用 intent_accuracy，Node2 召回用 recall@5 + ndcg@5，Node3 用 reason_quality
 ```
@@ -3277,13 +3353,18 @@ A：常见原因 + 对策：
 ```python
 # 1. 输入过滤：删除疑似指令（本项目 recommend_coach）
 import re
+
+
 def sanitize_input(text: str) -> str:
     # 删除"忽略以上指令"类模式
-    patterns = [r"忽略(以上|之前|所有).{0,4}(指令|提示|规则)",
-                r"ignore (above|previous|all) (instructions|prompts)"]
+    patterns = [
+        r"忽略(以上|之前|所有).{0,4}(指令|提示|规则)",
+        r"ignore (above|previous|all) (instructions|prompts)",
+    ]
     for p in patterns:
         text = re.sub(p, "[已过滤]", text, flags=re.IGNORECASE)
     return text
+
 
 # 2. 标签隔离：用户输入与召回内容用不同标签包裹
 prompt = f"""system: {SYSTEM_PROMPT}
@@ -3494,6 +3575,7 @@ async def recommend(payload):
     result = sync_graph.invoke(state)  # 同步调用阻塞整个服务
     return result
 
+
 # ✅ 正确：全链路 async
 @app.post("/v1/ai/recommend")
 async def recommend(payload):
@@ -3547,11 +3629,11 @@ A：**会阻塞 event loop**：
 
 ```python
 @app.post("/v1/ai/recommend")
-@rate_limit(qps=50)          # 1. 限流
+@rate_limit(qps=50)  # 1. 限流
 async def recommend(payload):
     try:
         result = await circuit_breaker.call(  # 3. 熔断
-            retry(                             # 2. 重试
+            retry(  # 2. 重试
                 RECOMMEND_GRAPH.ainvoke, attempts=2, delay=1
             ),
             state,
@@ -3690,9 +3772,9 @@ A：
 from prometheus_client import Counter, Histogram
 
 REQUEST_COUNT = Counter("recommend_requests_total", "总请求数", ["status"])
-REQUEST_LATENCY = Histogram("recommend_latency_seconds", "延迟分布",
-                            buckets=[0.5, 1, 2, 5, 10, 30])
+REQUEST_LATENCY = Histogram("recommend_latency_seconds", "延迟分布", buckets=[0.5, 1, 2, 5, 10, 30])
 TOKEN_USAGE = Counter("recommend_tokens_total", "token 用量", ["node"])
+
 
 @app.post("/v1/ai/recommend")
 async def recommend(payload):
@@ -3704,6 +3786,7 @@ async def recommend(payload):
         except Exception as e:
             REQUEST_COUNT.labels(status="error").inc()
             raise
+
 
 # Grafana 看板：QPS / P99 延迟 / 错误率 / token 日用量
 # 超过阈值 → AlertManager → 飞书告警
@@ -3761,6 +3844,7 @@ A：用 LangGraph 的 `astream_events` API，监听 LLM 的 stream 事件，边�
 ```python
 # app/api/routes_stream.py —— recommend_coach 流式输出
 from fastapi.responses import StreamingResponse
+
 
 @app.post("/v1/ai/recommend/stream")
 async def recommend_coach_stream(payload: RecommendCoachIn):
@@ -3932,7 +4016,7 @@ async def hybrid_retrieve(intent: dict) -> list[dict]:
 
     # 3. BM25 + 向量并行召回（asyncio.gather）
     bm25_results, vec_results = await asyncio.gather(
-        bm25_search(intent["query"], candidates),       # 在 500 条里搜
+        bm25_search(intent["query"], candidates),  # 在 500 条里搜
         vector_search(intent["query_emb"], candidates),  # 在 500 条里搜
     )
 

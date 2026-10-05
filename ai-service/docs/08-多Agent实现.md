@@ -184,10 +184,13 @@ REVIEW_SUMMARY_GRAPH = _builder.compile(checkpointer=RedisSaver(...))
 ```python
 @app.post("/v1/ai/review-summary", tags=["AI"])
 async def review_summary(payload: ReviewSummaryIn, request: Request):
-    state_out = await REVIEW_SUMMARY_GRAPH.ainvoke({
-        "coach_id": payload.coach_id,
-        "top_n": payload.top_n or 30,
-    }, config={"configurable": {"thread_id": f"review-{payload.coach_id}"}})
+    state_out = await REVIEW_SUMMARY_GRAPH.ainvoke(
+        {
+            "coach_id": payload.coach_id,
+            "top_n": payload.top_n or 30,
+        },
+        config={"configurable": {"thread_id": f"review-{payload.coach_id}"}},
+    )
     return ReviewSummaryResult.model_validate(state_out["summary"])
 
 
@@ -195,11 +198,15 @@ async def review_summary(payload: ReviewSummaryIn, request: Request):
 @app.post("/v1/ai/review-summary/commit", tags=["AI"])
 async def commit_summary(payload: CommitIn):
     """摘要完成后异步写入向量库，作为下次召回的历史。"""
-    await upsert_reviews([{
-        "id": f"review_summary_{payload.coach_id}_{date}",
-        "text": payload.summary_text,
-        "metadata": {"coach_id": payload.coach_id, "type": "summary"},
-    }])
+    await upsert_reviews(
+        [
+            {
+                "id": f"review_summary_{payload.coach_id}_{date}",
+                "text": payload.summary_text,
+                "metadata": {"coach_id": payload.coach_id, "type": "summary"},
+            }
+        ]
+    )
     return {"ok": True}
 ```
 
@@ -275,15 +282,19 @@ START
 from langgraph.prebuilt import ToolNode
 from langchain_core.messages import AIMessage, HumanMessage
 
+
 # 定义工具（通过 MCP）
 async def verify_national_cert(args):
     return await mcp_call("verify_national_cert", args, server="java")
 
+
 async def verify_expiry(args):
     return await mcp_call("verify_expiry", args, server="python")
 
+
 async def check_name_match(args):
     return await mcp_call("check_name_match", args, server="python")
+
 
 TOOLS = [verify_national_cert, verify_expiry, check_name_match]
 tool_node = ToolNode(TOOLS)
@@ -324,14 +335,17 @@ _builder.add_node("hitl", hitl_checkpoint)
 _builder.add_edge(START, "ocr")
 _builder.add_edge("ocr", "extract_fields")
 _builder.add_edge("extract_fields", "react_agent")
-_builder.add_conditional_edges("react_agent", should_continue,
-                                {"to_tools": "tools", "to_risk": "risk_assess"})
+_builder.add_conditional_edges(
+    "react_agent", should_continue, {"to_tools": "tools", "to_risk": "risk_assess"}
+)
 _builder.add_edge("tools", "react_agent")  # 工具结果回到 ReAct Agent
 _builder.add_edge("risk_assess", "hitl")
-_builder.add_conditional_edges("hitl",
-    ConditionalRouter("branch",
-        {"approved": END, "rejected": END, "more_info": "react_agent"},
-        default=END).route)
+_builder.add_conditional_edges(
+    "hitl",
+    ConditionalRouter(
+        "branch", {"approved": END, "rejected": END, "more_info": "react_agent"}, default=END
+    ).route,
+)
 
 CERT_REVIEW_GRAPH = _builder.compile(checkpointer=RedisSaver(...))
 ```
@@ -349,13 +363,15 @@ async def hitl_checkpoint(state) -> dict:
     verification_results = state["verification_results"]
 
     # interrupt 暂停 Graph，state 持久化到 Redis
-    decision = interrupt({
-        "prompt": f"证书审核人工确认（风险等级：{risk}）",
-        "fields": fields,
-        "verification_results": verification_results,
-        "risk_level": risk,
-        "suggestion": state.get("suggestion"),
-    })
+    decision = interrupt(
+        {
+            "prompt": f"证书审核人工确认（风险等级：{risk}）",
+            "fields": fields,
+            "verification_results": verification_results,
+            "risk_level": risk,
+            "suggestion": state.get("suggestion"),
+        }
+    )
 
     # 管理员通过 /resume API 提交决定
     if decision.get("action") == "approve":
@@ -416,6 +432,7 @@ async def ocr_certificate(args: dict) -> list[TextContent]:
 ```python
 # app/graphs/supervisor.py（新增）
 """Supervisor Agent：根据用户意图路由到子 Agent。"""
+
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import Command
 
@@ -429,11 +446,14 @@ SUPERVISOR_PROMPT = """你是体育外卖平台的 AI 调度员。
             "args": {...}}
 """
 
+
 async def supervisor(state) -> dict:
-    text = await achat([
-        {"role": "system", "content": SUPERVISOR_PROMPT},
-        {"role": "user", "content": state["user_query"]},
-    ])
+    text = await achat(
+        [
+            {"role": "system", "content": SUPERVISOR_PROMPT},
+            {"role": "user", "content": state["user_query"]},
+        ]
+    )
     decision = json.loads(text)
     return {"route": decision["agent"], "args": decision["args"]}
 
@@ -448,11 +468,15 @@ _builder.add_node("recommend_coach", recommend_agent_node)
 _builder.add_node("review_summary", review_summary_agent_node)
 _builder.add_node("cert_review", cert_review_agent_node)
 _builder.add_edge(START, "supervisor")
-_builder.add_conditional_edges("supervisor", route_to_agent, {
-    "recommend_coach": "recommend_coach",
-    "review_summary": "review_summary",
-    "cert_review": "cert_review",
-})
+_builder.add_conditional_edges(
+    "supervisor",
+    route_to_agent,
+    {
+        "recommend_coach": "recommend_coach",
+        "review_summary": "review_summary",
+        "cert_review": "cert_review",
+    },
+)
 _builder.add_edge("recommend_coach", END)
 _builder.add_edge("review_summary", END)
 _builder.add_edge("cert_review", END)
@@ -466,10 +490,13 @@ SUPERVISOR_GRAPH = _builder.compile(checkpointer=RedisSaver(...))
 async def chat(payload: ChatIn, request: Request):
     """统一 AI 入口：Supervisor 路由到具体子 Agent。"""
     thread_id = payload.thread_id or f"chat-{uuid.uuid4()}"
-    state_out = await SUPERVISOR_GRAPH.ainvoke({
-        "user_query": payload.query,
-        "user_id": request.headers.get("x-user-id"),
-    }, config={"configurable": {"thread_id": thread_id}})
+    state_out = await SUPERVISOR_GRAPH.ainvoke(
+        {
+            "user_query": payload.query,
+            "user_id": request.headers.get("x-user-id"),
+        },
+        config={"configurable": {"thread_id": thread_id}},
+    )
     return {"result": state_out.get("result"), "thread_id": thread_id}
 ```
 
