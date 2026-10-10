@@ -251,7 +251,7 @@ onsite-fitness/
 │   └── backup_mysql.sh            # MySQL 每日备份
 ├── prometheus/                    # Prometheus 采集配置 + Alertmanager 告警路由
 ├── sql/
-│   ├── sports_take_out.sql        # 业务库建表 + 种子数据
+│   ├── onsite_fitness.sql          # 业务库建表 + 种子数据
 │   └── 07-idempotency-indexes.sql # 幂等唯一索引 + 应用账号授权
 │
 ├── ai-service/                    # AI 微服务（核心）
@@ -316,7 +316,8 @@ onsite-fitness/
 | 技术 | 版本 | 用途 |
 |------|------|------|
 | uni-app | 2.x | 微信小程序（用户端/教练端） |
-| Vue 3 + Element Plus | 3.x | 管理端 PC Web |
+| Vue 3 | 3.4 | 管理端 PC Web |
+| Element Plus | 2.6 | 管理端 UI 组件库 |
 
 ## 配置说明
 
@@ -415,7 +416,7 @@ stateDiagram-v2
 | coach_certificate | 教练资质证书 | order_detail | 订单明细 |
 | coach_schedule | 教练排期 | order_review | 订单评价 |
 
-完整建表脚本：`sql/sports_take_out.sql`（含种子数据）。
+完整建表脚本：`sql/onsite_fitness.sql`（含种子数据）。
 
 ## 支付模式说明
 
@@ -439,9 +440,9 @@ stateDiagram-v2
 
 ## 致谢与声明
 
-本项目的业务底座沿用开源脚手架 platform-backend 的技术骨架，并将原有业务领域模型完整重构为「上门私教」业务域。感谢开源社区提供的脚手架基础。
+本项目为「上门私教」业务域的完整自主研发实现，涵盖后端领域模型、AI 微服务、管理端与小程序端。
 
-> ⚠️ 本项目为学习交流与作品展示用途。AI 微服务模块为自主研发，业务底座部分基于第三方教学项目重构。
+> ⚠️ 本项目为学习交流与作品展示用途，全部业务代码与 AI 微服务模块均为自主研发。
 ## 演示账号
 
 | 角色 | 账号 | 密码 |
@@ -812,7 +813,8 @@ onsite-fitness/
 | Technology | Version | Purpose |
 |------------|---------|---------|
 | uni-app | 2.x | WeChat Mini-Program (User/Coach) |
-| Vue 3 + Element Plus | 3.x | Admin PC Web |
+| Vue 3 | 3.4 | Admin PC Web |
+| Element Plus | 2.6 | Admin UI component library |
 
 ## Configuration
 
@@ -906,7 +908,7 @@ stateDiagram-v2
 | coach_certificate | Coach certificates | order_detail | Order details |
 | coach_schedule | Coach schedule | order_review | Order reviews |
 
-Full schema: `sql/sports_take_out.sql` (with seed data).
+Full schema: `sql/onsite_fitness.sql` (with seed data).
 
 ## Payment Mode
 

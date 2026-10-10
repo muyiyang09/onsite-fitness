@@ -1,6 +1,5 @@
 -- =====================================================================
 -- 上门体育 · 上门私教平台 数据库初始化脚本（v0.2，对齐后端 mapper XML）
--- 底座：脚手架 platform-backend
 -- 14 张表：employee / user / address_book / category / coach /
 --          coach_certificate / coach_schedule / course / course_package /
 --          package_course / dispatch_pool / orders / order_detail / order_review
@@ -12,7 +11,7 @@ CREATE DATABASE onsite_fitness DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_gen
 USE onsite_fitness;
 
 -- ---------------------------------------------------------------------
--- 1. 平台管理员（复用脚手架 employee）
+-- 1. 平台管理员
 -- ---------------------------------------------------------------------
 CREATE TABLE employee (
     id          BIGINT      NOT NULL AUTO_INCREMENT COMMENT '主键',
@@ -32,7 +31,7 @@ CREATE TABLE employee (
 ) ENGINE=InnoDB COMMENT='平台管理员';
 
 -- ---------------------------------------------------------------------
--- 2. 客户（复用脚手架 user）
+-- 2. 客户
 -- ---------------------------------------------------------------------
 CREATE TABLE user (
     id          BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
@@ -47,7 +46,7 @@ CREATE TABLE user (
 ) ENGINE=InnoDB COMMENT='客户';
 
 -- ---------------------------------------------------------------------
--- 3. 上门地址簿（复用脚手架 address_book）
+-- 3. 上门地址簿
 -- ---------------------------------------------------------------------
 CREATE TABLE address_book (
     id            BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
@@ -68,7 +67,7 @@ CREATE TABLE address_book (
 ) ENGINE=InnoDB COMMENT='上门地址';
 
 -- ---------------------------------------------------------------------
--- 4. 课程分类（复用脚手架 category）
+-- 4. 课程分类
 -- ---------------------------------------------------------------------
 CREATE TABLE category (
     id          BIGINT      NOT NULL AUTO_INCREMENT COMMENT '主键',

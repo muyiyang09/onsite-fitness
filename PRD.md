@@ -1,7 +1,7 @@
 # 上门体育 · 上门私教平台 — 产品需求文档（PRD）
 
 > 版本 v0.2（最终 MVP 边界确认） · 2026-08-23
-> 底座：开源脚手架 platform-backend（Spring Boot 3.5.16 单体 + MyBatis + MySQL + Redis + 微信小程序）
+> 技术栈：Spring Boot 3.5.16 单体 + MyBatis + MySQL + Redis + 微信小程序
 > v0.2 变更：明确 MVP 做/不做边界、新增订单状态机图、合并派单/抢单池为单表、CourseSpec 规格字段并入 Course
 
 ---
@@ -25,7 +25,7 @@
 |---|---|---|---|
 | 用户（减脂客户） | 用户端 | 微信小程序 / H5 | ✅ |
 | 教练 | 教练端 | 微信小程序（**新建，完整功能**） | ✅ |
-| 平台运营 | 管理端 | PC Web（复用脚手架 admin） | ✅ |
+| 平台运营 | 管理端 | PC Web | ✅ |
 | 城市代理 | 城市端 | PC Web | ❌ 二期 |
 
 ---
@@ -87,7 +87,7 @@
 ## 4. 功能模块清单
 
 ### 4.1 用户端（小程序）
-- [x] 微信登录、地址管理（复用脚手架）
+- [x] 微信登录、地址管理
 - [x] 课程浏览 / 分类 / 详情
 - [x] 教练列表：按评分 / 等级 / 价格筛选（MVP 不做距离筛选）
 - [x] **两种下单**：指定教练 / 派单池抢单（用户视角：选具体教练 or 选"就近派单"）
@@ -104,12 +104,12 @@
 - [x] 服务开始/完成、训练记录上传、体测数据上传
 - [x] 查看评价与评分
 
-### 4.3 管理端（PC，复用脚手架 admin）
+### 4.3 管理端（PC）
 - [x] 教练审核（资质/证书）、教练等级
 - [x] 课程分类 / 课程管理（替代菜品/套餐）
 - [x] 订单管理、派单池监控
 - [x] 评价管理
-- [ ] 数据统计（复用脚手架报表，**二期，MVP 不做**）
+- [ ] 数据统计（报表，**二期，MVP 不做**）
 
 ---
 
@@ -121,13 +121,13 @@
 | DishFlavor 口味 | **CourseSpec 课程规格** | v0.2：**规格字段（强度/器械/人群/时长）直接并入 Course，不独立建表**；二期如需 SKU 多价再拆 |
 | Setmeal 套餐 | **CoursePackage 训练套餐** | N 节课打包 |
 | SetmealDish 套餐菜品 | **PackageCourse 套餐课程** | 关联表 |
-| Category 分类 | Category 分类 | 复用 |
+| Category 分类 | Category 分类 | 沿用 |
 | ShoppingCart 购物车 | **删除** | 预约不是购物车模型 |
 | Orders 订单 | **Orders 预约订单** | 加：教练、时段、上门地址、派单模式、状态机 |
 | OrderDetail 明细 | OrderDetail 明细 | 加：教练、时段 |
 | Employee 员工 | **Employee 管理员 / Coach 教练** | 拆分（Coach 独立表） |
-| User 用户 | User 用户（客户） | 复用 |
-| AddressBook 地址 | AddressBook 上门地址 | 复用 |
+| User 用户 | User 用户（客户） | 沿用 |
+| AddressBook 地址 | AddressBook 上门地址 | 沿用 |
 
 ### 5.1 新增实体（原业务域没有）
 | 实体 | 说明 |
@@ -142,7 +142,7 @@
 
 ## 6. 数据库设计（表清单）
 
-**保留复用**：`user`、`address_book`、`category`、`orders`（改造）、`order_detail`（改造）、`employee`（改 admin）
+**沿用表**：`user`、`address_book`、`category`、`orders`（改造）、`order_detail`（改造）、`employee`（改 admin）
 
 **改造重命名**：`dish` → `course`（含规格字段）、`setmeal` → `course_package`、`setmeal_dish` → `package_course`
 （`dish_flavor` 不再独立建表，规格字段并入 `course`）
@@ -169,13 +169,13 @@
 
 ---
 
-## 7. 技术栈与底座
+## 7. 技术栈
 
-- 后端：Spring Boot 3.5.16（继承脚手架）、MyBatis、MySQL、Redis、JWT、Knife4j、PageHelper、阿里云 OSS
-- 前端：uniapp 微信小程序（用户端改造 + 教练端新建）、PC 管理端（继承脚手架 admin，Vue + ElementUI 风格）
+- 后端：Spring Boot 3.5.16、MyBatis、MySQL、Redis、JWT、Knife4j、PageHelper、阿里云 OSS
+- 前端：uniapp 微信小程序（用户端 + 教练端）、PC 管理端（Vue + Element Plus）
 - 支付：MVP 阶段 **模拟支付**，二期接微信支付
 - 地图：MVP 用地址文本，二期接高德/百度定位导航
-- 通信：WebSocket（来单提醒，复用脚手架 WS 模块）
+- 通信：WebSocket（来单提醒）
 
 ---
 
@@ -221,7 +221,7 @@
 ### 10.2 不做（推到二期）
 | 项 | 二期方案 |
 |---|---|
-| 数据统计报表 | 复用脚手架报表简化版 |
+| 数据统计报表 | 简化版报表 |
 | 地图导航 | MVP 用地址文本 + 电话联系 |
 | 城市代理端 | PC Web，二阶段 |
 | 微信真实支付 | MVP 模拟支付 |

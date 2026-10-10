@@ -20,7 +20,7 @@
 ## 运行步骤
 
 1. 用 **HBuilderX** 导入本目录（或 `uni-app` CLI）。
-2. 后端先启动：在 `platform-backend/backend-server` 下 `mvn spring-boot:run`（需 MySQL/Redis 已启动、已导入 `sql/sports_take_out.sql`）。
+2. 后端先启动：在 `platform-backend/backend-server` 下 `mvn spring-boot:run`（需 MySQL/Redis 已启动、已导入 `sql/onsite_fitness.sql`）。
 3. 改后端地址：`api/request.js` 的 `BASE_URL`（默认 `http://localhost:8080`）。
 4. 配置微信 appid：`manifest.json` → `mp-weixin.appid`（真机/微信预览需要）。
 5. 运行到微信开发者工具。

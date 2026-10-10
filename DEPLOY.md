@@ -72,7 +72,7 @@ docker-compose down -v
 
 ### 前置条件
 - JDK 21
-- Maven 3.6+
+- Maven 3.9+
 - MySQL 8.0
 - Redis 7+
 - Node.js 18+
