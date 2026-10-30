@@ -28,7 +28,7 @@
 
 ## 🎯 为什么值得你花 15 分钟
 
-这不是一个 CRUD Demo。**LangGraph Agent 工程化中所有真正难的点——多 Agent 协作、HITL 人工介入、Checkpointer 状态持久化、混合检索 RAG、缓存穿透/击穿/雪崩三防、跨语言 MCP 工具层——都在这个仓库里被真实落地过一遍**，并且每一条都配有可运行代码和踩坑记录。
+这不是一个 CRUD Demo。**LangGraph Agent 工程化中所有真正难的点——多 Agent 协作、HITL 人工介入、Checkpointer 状态持久化、混合检索 RAG、缓存穿透/击穿/雪崩三防、跨语言 MCP 工具层——都在这个仓库里被真实落地过一遍**，每一条都配有可运行代码。
 
 如果你正在准备 AI 工程化方向的面试或做技术选型，直接按表索骥：
 
@@ -39,12 +39,12 @@
 | 循环工程 / HITL / Checkpointer / RedisSaver | [03-循环工程](ai-service/docs/03-循环工程.md) · [10-上线检查清单](ai-service/docs/10-上线检查清单.md) |
 | 缓存三防 / 分布式锁防死锁 / 熔断限流 | [05-商业化加固](ai-service/docs/05-商业化加固.md) |
 | MCP 跨语言工具层 | [07-MCP工具层](ai-service/docs/07-MCP工具层.md) |
-| ⭐ **Agent 高频面试题（40+ 题 + 场景面经 + 速记话术）** | [09-Agent面试题集](ai-service/docs/09-Agent面试题集.md) · [11-Agent场景面经](ai-service/docs/11-Agent场景面经.md) · [12-面试速记话术](ai-service/docs/12-面试速记话术.md) |
-| LLM 可观测性（痛点分析 + 9 道面试问答） | [13-Langfuse接入与面试题](ai-service/docs/13-Langfuse接入与面试题.md) |
+| 学习笔记：Agent 面试题与话术整理（资料汇总，非本人实践复盘） | [09-Agent面试题集](ai-service/docs/09-Agent面试题集.md) · [11-Agent场景面经](ai-service/docs/11-Agent场景面经.md) · [12-面试速记话术](ai-service/docs/12-面试速记话术.md) |
+| LLM 可观测性（Langfuse 接入实践） | [13-Langfuse接入与面试题](ai-service/docs/13-Langfuse接入与面试题.md) |
 
 ![用户端首页](docs/screenshots/user-home.png)
 
-如果对你有帮助，右上角点个 **⭐ Star** 让更多 AI 学习者看到这份资料。这是它持续更新的最大动力。
+如果你在做类似方向，欢迎交流。右上角点个 **⭐ Star** 是对我最大的鼓励。
 
 ## 核心亮点
 
@@ -485,11 +485,11 @@ stateDiagram-v2
 | [ai-service/docs/06-Harness工程与评估.md](ai-service/docs/06-Harness工程与评估.md) | Eval 数据集、Metric、Trace |
 | [ai-service/docs/07-MCP工具层.md](ai-service/docs/07-MCP工具层.md) | MCP Server/Client、跨语言工具复用 |
 | [ai-service/docs/08-多Agent实现.md](ai-service/docs/08-多Agent实现.md) | 多 Agent 协同、Supervisor 调度 |
-| [ai-service/docs/09-Agent面试题集.md](ai-service/docs/09-Agent面试题集.md) | Agent 技术面试深度题集 |
+| [ai-service/docs/09-Agent面试题集.md](ai-service/docs/09-Agent面试题集.md) | 学习笔记：面试题整理（非本人实践复盘） |
 | [ai-service/docs/10-上线检查清单.md](ai-service/docs/10-上线检查清单.md) | 7 阶段上线检查清单 |
-| [ai-service/docs/11-Agent场景面经.md](ai-service/docs/11-Agent场景面经.md) | Agent 场景面经（行为面试 + 系统设计） |
-| [ai-service/docs/12-面试速记话术.md](ai-service/docs/12-面试速记话术.md) | 面试速记话术（60-90 秒口述版） |
-| [ai-service/docs/13-Langfuse接入与面试题.md](ai-service/docs/13-Langfuse接入与面试题.md) | LLM 可观测性：痛点分析 + Langfuse 接入 + 9 道面试问答 |
+| [ai-service/docs/11-Agent场景面经.md](ai-service/docs/11-Agent场景面经.md) | 学习笔记：场景面经整理 |
+| [ai-service/docs/12-面试速记话术.md](ai-service/docs/12-面试速记话术.md) | 学习笔记：面试话术整理 |
+| [ai-service/docs/13-Langfuse接入与面试题.md](ai-service/docs/13-Langfuse接入与面试题.md) | LLM 可观测性：Langfuse 接入实践 |
 
 ## 许可证 (License)
 
@@ -526,7 +526,7 @@ stateDiagram-v2
 
 ## ⭐ Why This Repo Is Worth Your Time
 
-This is not another CRUD demo. **Every genuinely hard part of LangGraph agent engineering — multi-agent collaboration, HITL, Checkpointer state persistence, hybrid-retrieval RAG, cache penetration/collapse/avalanche protection, cross-language MCP tool layer — has been implemented for real in this codebase**, each with runnable code and battle-tested lessons.
+This is not another CRUD demo. **Every genuinely hard part of LangGraph agent engineering — multi-agent collaboration, HITL, Checkpointer state persistence, hybrid-retrieval RAG, cache penetration/collapse/avalanche protection, cross-language MCP tool layer — has been implemented for real in this codebase**, each with runnable code.
 
 Preparing for AI engineering interviews or doing tech selection? Go straight to what you need:
 
@@ -537,8 +537,8 @@ Preparing for AI engineering interviews or doing tech selection? Go straight to 
 | Loop engineering / HITL / RedisSaver | [Loop Engineering](ai-service/docs/03-循环工程.md) · [Launch Checklist](ai-service/docs/10-上线检查清单.md) |
 | Cache protection / distributed locks / circuit breaking | [Production Hardening](ai-service/docs/05-商业化加固.md) |
 | MCP cross-language tool layer | [MCP Tool Layer](ai-service/docs/07-MCP工具层.md) |
-| **40+ AI Agent interview questions with answers** | [Interview Q&A](ai-service/docs/09-Agent面试题集.md) · [Scenario Questions](ai-service/docs/11-Agent场景面经.md) |
-| LLM observability (pain points + 9 interview Q&As) | [Langfuse Integration & Interview Q&A](ai-service/docs/13-Langfuse接入与面试题.md) |
+| Study notes: AI Agent interview Q&A (collected material, not first-hand postmortems) | [Interview Q&A](ai-service/docs/09-Agent面试题集.md) · [Scenario Questions](ai-service/docs/11-Agent场景面经.md) |
+| LLM observability (Langfuse integration) | [Langfuse Integration & Interview Q&A](ai-service/docs/13-Langfuse接入与面试题.md) |
 
 If this repo helps you, please give it a **⭐ Star** — it keeps the project alive.
 
@@ -977,9 +977,9 @@ The following 10 API endpoints have been fully verified (2026-08-24):
 | [ai-service/docs/06-Harness工程与评估.md](ai-service/docs/06-Harness工程与评估.md) | Evaluation and harness |
 | [ai-service/docs/07-MCP工具层.md](ai-service/docs/07-MCP工具层.md) | MCP tool layer |
 | [ai-service/docs/08-多Agent实现.md](ai-service/docs/08-多Agent实现.md) | Multi-Agent implementation |
-| [ai-service/docs/09-Agent面试题集.md](ai-service/docs/09-Agent面试题集.md) | Agent interview Q&A collection |
+| [ai-service/docs/09-Agent面试题集.md](ai-service/docs/09-Agent面试题集.md) | Study notes: interview Q&A (collected material) |
 | [ai-service/docs/10-上线检查清单.md](ai-service/docs/10-上线检查清单.md) | Production launch checklist |
-| [ai-service/docs/13-Langfuse接入与面试题.md](ai-service/docs/13-Langfuse接入与面试题.md) | LLM observability: pain points + Langfuse integration + 9 interview Q&As |
+| [ai-service/docs/13-Langfuse接入与面试题.md](ai-service/docs/13-Langfuse接入与面试题.md) | LLM observability: Langfuse integration |
 
 ## License
 
