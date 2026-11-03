@@ -4,6 +4,7 @@
 
 **基于 Spring Boot + LangGraph 的上门私教 O2O 智能服务系统**
 
+[![CI](https://github.com/muyiyang09/onsite-fitness/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/muyiyang09/onsite-fitness/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 [![LangGraph](https://img.shields.io/badge/LangGraph-1.1.4-0f0f0f?logo=langchain)](https://langchain-ai.github.io/langgraph/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.16-brightgreen.svg)](https://spring.io/)
@@ -26,11 +27,21 @@
 
 > 🇨🇳 项目动机源自《全民健身计划（2026—2030）》提出的科学健身指导供给缺口——政策文件里 "每千人 3.3 名社会体育指导员" 的目标，正是本平台要用数字化手段补上的空缺。
 
-## 🎯 为什么值得你花 15 分钟
+## ✅ 工程状态
 
-这不是一个 CRUD Demo。**LangGraph Agent 工程化中所有真正难的点——多 Agent 协作、HITL 人工介入、Checkpointer 状态持久化、混合检索 RAG、缓存穿透/击穿/雪崩三防、跨语言 MCP 工具层——都在这个仓库里被真实落地过一遍**，每一条都配有可运行代码。
+这不是一个 CRUD Demo。LangGraph Agent 工程化中真正难的点——多 Agent 协作、HITL 人工介入、Checkpointer 状态持久化、混合检索 RAG、缓存穿透/击穿/雪崩三防、跨语言 MCP 工具层——都在代码里落地，并且每个结论都有证据：
 
-如果你正在准备 AI 工程化方向的面试或做技术选型，直接按表索骥：
+- **CI 全绿**：每次提交自动跑 ruff + pytest + docker build（[最近运行](https://github.com/muyiyang09/onsite-fitness/actions/workflows/ci.yml)）
+- **67 个测试用例**：覆盖 Agent 编排、检索降级、循环工程、工程加固、安全与工具层（`ai-service/tests/`）
+- **一键部署**：`docker compose up -d` 拉起三端 + 主后端 + AI 微服务（见下方[快速开始](#快速开始)）
+
+| 用户端 | 教练端 |
+|---|---|
+| ![用户端首页](docs/screenshots/user-home.png) | ![教练端](docs/screenshots/coach-home.png) |
+
+![管理端](docs/screenshots/admin-coach.png)
+
+工程实现文档按主题索引：
 
 | 你关心的主题 | 直接看这几篇 |
 |---|---|
@@ -39,10 +50,7 @@
 | 循环工程 / HITL / Checkpointer / RedisSaver | [03-循环工程](ai-service/docs/03-循环工程.md) · [10-上线检查清单](ai-service/docs/10-上线检查清单.md) |
 | 缓存三防 / 分布式锁防死锁 / 熔断限流 | [05-商业化加固](ai-service/docs/05-商业化加固.md) |
 | MCP 跨语言工具层 | [07-MCP工具层](ai-service/docs/07-MCP工具层.md) |
-| 学习笔记：Agent 面试题与话术整理（资料汇总，非本人实践复盘） | [09-Agent面试题集](ai-service/docs/09-Agent面试题集.md) · [11-Agent场景面经](ai-service/docs/11-Agent场景面经.md) · [12-面试速记话术](ai-service/docs/12-面试速记话术.md) |
 | LLM 可观测性（Langfuse 接入实践） | [13-Langfuse接入与面试题](ai-service/docs/13-Langfuse接入与面试题.md) |
-
-![用户端首页](docs/screenshots/user-home.png)
 
 如果你在做类似方向，欢迎交流。右上角点个 **⭐ Star** 是对我最大的鼓励。
 
@@ -485,10 +493,10 @@ stateDiagram-v2
 | [ai-service/docs/06-Harness工程与评估.md](ai-service/docs/06-Harness工程与评估.md) | Eval 数据集、Metric、Trace |
 | [ai-service/docs/07-MCP工具层.md](ai-service/docs/07-MCP工具层.md) | MCP Server/Client、跨语言工具复用 |
 | [ai-service/docs/08-多Agent实现.md](ai-service/docs/08-多Agent实现.md) | 多 Agent 协同、Supervisor 调度 |
-| [ai-service/docs/09-Agent面试题集.md](ai-service/docs/09-Agent面试题集.md) | 学习笔记：面试题整理（非本人实践复盘） |
+| [ai-service/docs/09-Agent面试题集.md](ai-service/docs/09-Agent面试题集.md) | Agent 面试题集（资料整理） |
 | [ai-service/docs/10-上线检查清单.md](ai-service/docs/10-上线检查清单.md) | 7 阶段上线检查清单 |
-| [ai-service/docs/11-Agent场景面经.md](ai-service/docs/11-Agent场景面经.md) | 学习笔记：场景面经整理 |
-| [ai-service/docs/12-面试速记话术.md](ai-service/docs/12-面试速记话术.md) | 学习笔记：面试话术整理 |
+| [ai-service/docs/11-Agent场景面经.md](ai-service/docs/11-Agent场景面经.md) | Agent 场景面经（资料整理） |
+| [ai-service/docs/12-面试速记话术.md](ai-service/docs/12-面试速记话术.md) | 面试速记话术（资料整理） |
 | [ai-service/docs/13-Langfuse接入与面试题.md](ai-service/docs/13-Langfuse接入与面试题.md) | LLM 可观测性：Langfuse 接入实践 |
 
 ## 许可证 (License)
@@ -524,11 +532,21 @@ stateDiagram-v2
 [![GitHub Stars](https://img.shields.io/github/stars/muyiyang09/onsite-fitness?style=social)](https://github.com/muyiyang09/onsite-fitness/stargazers)
 [![Non-Commercial](https://img.shields.io/badge/Non--Commercial-License-red.svg)](#license)
 
-## ⭐ Why This Repo Is Worth Your Time
+## ✅ Engineering Status
 
-This is not another CRUD demo. **Every genuinely hard part of LangGraph agent engineering — multi-agent collaboration, HITL, Checkpointer state persistence, hybrid-retrieval RAG, cache penetration/collapse/avalanche protection, cross-language MCP tool layer — has been implemented for real in this codebase**, each with runnable code.
+This is not another CRUD demo. **Every genuinely hard part of LangGraph agent engineering — multi-agent collaboration, HITL, Checkpointer state persistence, hybrid-retrieval RAG, cache protection, cross-language MCP tool layer — has been implemented for real in this codebase**, with evidence:
 
-Preparing for AI engineering interviews or doing tech selection? Go straight to what you need:
+- **CI green**: every push runs ruff + pytest + docker build ([latest runs](https://github.com/muyiyang09/onsite-fitness/actions/workflows/ci.yml))
+- **67 test cases**: covering agent orchestration, retrieval fallback, loop engineering, hardening, safety and tool layers (`ai-service/tests/`)
+- **One-command deploy**: `docker compose up -d` brings up all services (see Quick Start below)
+
+| User | Coach |
+|---|---|
+| ![User Home](docs/screenshots/user-home.png) | ![Coach Home](docs/screenshots/coach-home.png) |
+
+![Admin](docs/screenshots/admin-coach.png)
+
+Implementation docs by topic:
 
 | Topic | Read |
 |---|---|
@@ -537,10 +555,10 @@ Preparing for AI engineering interviews or doing tech selection? Go straight to 
 | Loop engineering / HITL / RedisSaver | [Loop Engineering](ai-service/docs/03-循环工程.md) · [Launch Checklist](ai-service/docs/10-上线检查清单.md) |
 | Cache protection / distributed locks / circuit breaking | [Production Hardening](ai-service/docs/05-商业化加固.md) |
 | MCP cross-language tool layer | [MCP Tool Layer](ai-service/docs/07-MCP工具层.md) |
-| Study notes: AI Agent interview Q&A (collected material, not first-hand postmortems) | [Interview Q&A](ai-service/docs/09-Agent面试题集.md) · [Scenario Questions](ai-service/docs/11-Agent场景面经.md) |
 | LLM observability (Langfuse integration) | [Langfuse Integration & Interview Q&A](ai-service/docs/13-Langfuse接入与面试题.md) |
 
-If this repo helps you, please give it a **⭐ Star** — it keeps the project alive.
+If you're building something similar, let's talk. A **⭐ Star** means a lot.
+
 
 [Back to Top](#上门体育--ai-智能体平台)
 
@@ -977,7 +995,7 @@ The following 10 API endpoints have been fully verified (2026-08-24):
 | [ai-service/docs/06-Harness工程与评估.md](ai-service/docs/06-Harness工程与评估.md) | Evaluation and harness |
 | [ai-service/docs/07-MCP工具层.md](ai-service/docs/07-MCP工具层.md) | MCP tool layer |
 | [ai-service/docs/08-多Agent实现.md](ai-service/docs/08-多Agent实现.md) | Multi-Agent implementation |
-| [ai-service/docs/09-Agent面试题集.md](ai-service/docs/09-Agent面试题集.md) | Study notes: interview Q&A (collected material) |
+| [ai-service/docs/09-Agent面试题集.md](ai-service/docs/09-Agent面试题集.md) | Agent interview Q&A collection |
 | [ai-service/docs/10-上线检查清单.md](ai-service/docs/10-上线检查清单.md) | Production launch checklist |
 | [ai-service/docs/13-Langfuse接入与面试题.md](ai-service/docs/13-Langfuse接入与面试题.md) | LLM observability: Langfuse integration |
 
