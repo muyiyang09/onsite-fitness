@@ -41,6 +41,12 @@
 
 ![管理端](docs/screenshots/admin-coach.png)
 
+## 🎬 Demo（30 秒）
+
+<video src="https://github.com/muyiyang09/onsite-fitness/raw/main/docs/demo/onsite-fitness-demo.mp4" controls width="100%"></video>
+
+*移动端不显示视频时，[点这里直接下载](docs/demo/onsite-fitness-demo.mp4) 或 [GIF 版](docs/demo/onsite-fitness-demo-small.gif)。*
+
 工程实现文档按主题索引：
 
 | 你关心的主题 | 直接看这几篇 |
@@ -545,6 +551,12 @@ This is not another CRUD demo. **Every genuinely hard part of LangGraph agent en
 | ![User Home](docs/screenshots/user-home.png) | ![Coach Home](docs/screenshots/coach-home.png) |
 
 ![Admin](docs/screenshots/admin-coach.png)
+
+## 🎬 Demo (30s)
+
+<video src="https://github.com/muyiyang09/onsite-fitness/raw/main/docs/demo/onsite-fitness-demo.mp4" controls width="100%"></video>
+
+*If the video does not load on mobile, [download the MP4](docs/demo/onsite-fitness-demo.mp4) or [GIF version](docs/demo/onsite-fitness-demo-small.gif).*
 
 Implementation docs by topic:
 
